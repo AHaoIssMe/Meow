@@ -26,19 +26,11 @@ local function isValidKey(key)
 		and #key == #KEY_PREFIX + 15
 end
 
-------------------------------------------------
--- UI ROOT
-------------------------------------------------
-
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-ScreenGui.ResetOnSpawn = false
-
-------------------------------------------------
--- KEY UI
-------------------------------------------------
-
 if not (savedKey and isValidKey(savedKey)) then
-	local frame = Instance.new("Frame", ScreenGui)
+	local gui = Instance.new("ScreenGui", game.CoreGui)
+	gui.ResetOnSpawn = false
+
+	local frame = Instance.new("Frame", gui)
 	frame.Size = UDim2.new(0,300,0,160)
 	frame.Position = UDim2.new(0.5,-150,0.5,-80)
 	frame.BackgroundColor3 = Color3.fromRGB(255,170,200)
@@ -57,74 +49,101 @@ if not (savedKey and isValidKey(savedKey)) then
 	local box = Instance.new("TextBox", frame)
 	box.PlaceholderText = "Enter Key..."
 	box.Size = UDim2.new(1,-30,0,40)
-	box.Position = UDim2.new(0,15,0,50)
-	box.Font = Enum.Font.Gotham
-	box.TextSize = 14
-	box.BackgroundColor3 = Color3.fromRGB(255,255,255)
-	Instance.new("UICorner", box).CornerRadius = UDim.new(0,10)
+	box.Position = UDim2.new(0,15,0,55)
+	box.BackgroundColor3 = Color3.fromRGB(255,200,220)
+	box.Text = ""
+	box.ClearTextOnFocus = false
+	Instance.new("UICorner", box).CornerRadius = UDim.new(0,12)
 
 	local btn = Instance.new("TextButton", frame)
 	btn.Size = UDim2.new(1,-30,0,35)
-	btn.Position = UDim2.new(0,15,0,100)
+	btn.Position = UDim2.new(0,15,0,105)
 	btn.Text = "LOGIN"
 	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 14
+	btn.TextSize = 16
+	btn.BackgroundColor3 = Color3.fromRGB(255,120,180)
 	btn.TextColor3 = Color3.new(1,1,1)
-	btn.BackgroundColor3 = Color3.fromRGB(255,80,140)
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
 
 	btn.MouseButton1Click:Connect(function()
-		local key = box.Text
-		if isValidKey(key) then
-			writefile(KEY_FILE, HttpService:JSONEncode({key = key}))
-			frame:Destroy()
+		if isValidKey(box.Text) then
+			writefile(KEY_FILE, HttpService:JSONEncode({key = box.Text}))
+			gui:Destroy()
 		end
 	end)
 
-	repeat task.wait() until savedKey or (isfile(KEY_FILE))
+	repeat task.wait() until not gui.Parent
 end
 
 ------------------------------------------------
--- MAIN UI (GIỮ NGUYÊN KIỂU CŨ)
+-- MAIN UI
 ------------------------------------------------
 
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0,500,0,320)
-Main.Position = UDim2.new(0.5,-250,0.5,-160)
-Main.BackgroundColor3 = Color3.fromRGB(255,170,200)
+Main.Size = UDim2.new(0,520,0,360)
+Main.Position = UDim2.new(0.5,-260,0.5,-180)
+Main.BackgroundColor3 = Color3.fromRGB(255,180,210)
 Main.Active = true
 Main.Draggable = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
 
-local Menu = Instance.new("Frame", Main)
-Menu.Size = UDim2.new(0.3, -10, 1, -20)
-Menu.Position = UDim2.new(0,10,0,10)
-Menu.BackgroundTransparency = 1
+------------------------------------------------
+-- LOGO + RAINBOW BORDER
+------------------------------------------------
 
-local MenuLayout = Instance.new("UIListLayout", Menu)
-MenuLayout.Padding = UDim.new(0,6)
+local Logo = Instance.new("ImageButton", ScreenGui)
+Logo.Size = UDim2.new(0,50,0,50)
+Logo.Position = UDim2.new(0,20,0.45,0)
+Logo.BackgroundColor3 = Color3.fromRGB(255,190,210)
+Logo.Image = "rbxassetid://75319304126321"
+Logo.AutoButtonColor = false
+Instance.new("UICorner", Logo).CornerRadius = UDim.new(1,0)
 
-local Content = Instance.new("Frame", Main)
-Content.Size = UDim2.new(0.7, -20, 1, -20)
-Content.Position = UDim2.new(0.3,10,0,10)
-Content.BackgroundTransparency = 1
+local LogoStroke = Instance.new("UIStroke", Logo)
+LogoStroke.Thickness = 2
+
+local hue = 0
+RunService.RenderStepped:Connect(function(dt)
+	hue = (hue + dt * 0.3) % 1
+	LogoStroke.Color = Color3.fromHSV(hue,1,1)
+end)
 
 ------------------------------------------------
--- TAB LOGIC (FIX – KHÔNG SỬA UI)
+-- TAB UI
+------------------------------------------------
+
+local Menu = Instance.new("Frame", Main)
+Menu.Size = UDim2.new(0,130,1,-20)
+Menu.Position = UDim2.new(0,10,0,10)
+Menu.BackgroundColor3 = Color3.fromRGB(255,160,200)
+Instance.new("UICorner", Menu).CornerRadius = UDim.new(0,14)
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1,-160,1,-20)
+Content.Position = UDim2.new(0,150,0,10)
+Content.BackgroundColor3 = Color3.fromRGB(255,200,220)
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0,14)
+
+------------------------------------------------
+-- TAB LOGIC (OLD STYLE)
 ------------------------------------------------
 
 local Tabs = {}
 local CurrentTab
 
 function CreateTab(id, name)
-	local tabBtn = Instance.new("TextButton", Menu)
-	tabBtn.Size = UDim2.new(1,0,0,32)
-	tabBtn.BackgroundTransparency = 1
-	tabBtn.Text = name
-	tabBtn.Font = Enum.Font.GothamBold
-	tabBtn.TextSize = 14
-	tabBtn.TextColor3 = Color3.new(1,1,1)
-	tabBtn.BorderSizePixel = 0
+	local btn = Instance.new("TextButton", Menu)
+	btn.Size = UDim2.new(1,-10,0,32)
+	btn.Position = UDim2.new(0,5,0,(id-1)*36+5)
+	btn.Text = name
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.BackgroundColor3 = Color3.fromRGB(255,130,180)
+	btn.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
 
 	local page = Instance.new("Frame", Content)
 	page.Size = UDim2.new(1,0,1,0)
@@ -134,57 +153,38 @@ function CreateTab(id, name)
 	local layout = Instance.new("UIListLayout", page)
 	layout.Padding = UDim.new(0,6)
 
-	Tabs[id] = {
-		Button = tabBtn,
-		Page = page
-	}
-
-	tabBtn.MouseButton1Click:Connect(function()
+	btn.MouseButton1Click:Connect(function()
 		ShowTab(id)
 	end)
+
+	Tabs[id] = {Button = btn, Page = page}
 end
 
 function ShowTab(id)
-	for _,tab in pairs(Tabs) do
-		tab.Page.Visible = false
+	if CurrentTab then
+		CurrentTab.Page.Visible = false
 	end
-	if Tabs[id] then
-		Tabs[id].Page.Visible = true
-		CurrentTab = id
-	end
+	CurrentTab = Tabs[id]
+	CurrentTab.Page.Visible = true
 end
 
-function AddButton(tabId, data)
-	if not Tabs[tabId] then return end
-
-	local btn = Instance.new("TextButton", Tabs[tabId].Page)
-	btn.Size = UDim2.new(1,0,0,32)
-	btn.Text = data.Name or "Button"
-	btn.Font = Enum.Font.Gotham
-	btn.TextSize = 14
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.BackgroundTransparency = 0.2
-	btn.BackgroundColor3 = Color3.fromRGB(255,120,180)
-	btn.BorderSizePixel = 0
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
-
-	btn.MouseButton1Click:Connect(function()
-		if data.Callback then
-			data.Callback()
-		end
-	end)
+function AddButton(tabId, info)
+	local b = Instance.new("TextButton", Tabs[tabId].Page)
+	b.Size = UDim2.new(1,-10,0,32)
+	b.Text = info.Name or "Button"
+	b.Font = Enum.Font.Gotham
+	b.TextSize = 14
+	b.BackgroundColor3 = Color3.fromRGB(255,140,190)
+	b.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,10)
+	b.MouseButton1Click:Connect(info.Callback or function() end)
 end
-
-function BuildMenu()
-	-- không cần xử lý thêm, giữ đúng yêu cầu
-end
-
 -- Tab + Button
-local MainTab = CreateTab("Main")
-AddMenuButton("Main", 10, "Main")
-ShowTab("Main")
+CreateTab(1, "Linh Tinh")
+ShowTab(1)
+BuildMenu()
 
-AddButton(MainTab, {
+AddButton(1, {
 	Name = "Teleport Tool",
 	Callback = function()
 		local Players = game:GetService("Players")
@@ -193,7 +193,7 @@ local mouse = player:GetMouse()
 
 -- Tạo Tool
 local tool = Instance.new("Tool")
-tool.Name = "Teleport"
+tool.Name = "Teleport Tool"
 tool.RequiresHandle = false
 tool.Parent = player.Backpack
 
@@ -213,7 +213,7 @@ end)
 	end
 })
 
-AddButton(MainTab, {
+AddButton(1, {
 	Name = "Eps Rainbow",
 	Callback = function()
 		-- ESP RAINBOW AUTO RUN (NO BUTTON)
@@ -282,7 +282,7 @@ end)
 	end
 })
 
-AddButton(MainTab, {
+AddButton(1, {
 	Name = "Fly",
 	Callback = function()
 		local main = Instance.new("ScreenGui")
@@ -762,9 +762,318 @@ end)
 	end
 })
 
+AddButton(1, {
+	Name = "Copy Avatar",
+	Callback = function()
+		-- COPY AVATAR (CLIENT SIDE)
 
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
 
+local originalDesc
+local currentDesc
+local addedCon
+local isAvatarOriginal = true
 
+-- ================== APPLY AVATAR ==================
+local function applyAvatar(char)
+    local hum = char:WaitForChild("Humanoid")
+
+    if not originalDesc then
+        originalDesc = hum:GetAppliedDescription()
+    end
+
+    if currentDesc then
+        plr:ClearCharacterAppearance()
+        hum:ApplyDescriptionClientServer(currentDesc)
+        isAvatarOriginal = false
+    end
+end
+
+-- ================== UI ==================
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "CopyAvatarUI"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,260,0,150)
+frame.Position = UDim2.new(0.5,-130,0.5,-75)
+frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "🧍 Copy Avatar"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+
+local box = Instance.new("TextBox", frame)
+box.Size = UDim2.new(1,-20,0,35)
+box.Position = UDim2.new(0,10,0,40)
+box.PlaceholderText = "Tên hoặc UserId"
+box.Text = ""
+box.Font = Enum.Font.Gotham
+box.TextSize = 14
+Instance.new("UICorner", box).CornerRadius = UDim.new(0,8)
+
+local copyBtn = Instance.new("TextButton", frame)
+copyBtn.Size = UDim2.new(0.45,0,0,35)
+copyBtn.Position = UDim2.new(0.05,0,0,90)
+copyBtn.Text = "COPY"
+copyBtn.Font = Enum.Font.GothamBold
+copyBtn.TextColor3 = Color3.new(1,1,1)
+copyBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0,8)
+
+local resetBtn = Instance.new("TextButton", frame)
+resetBtn.Size = UDim2.new(0.45,0,0,35)
+resetBtn.Position = UDim2.new(0.5,0,0,90)
+resetBtn.Text = "RESET"
+resetBtn.Font = Enum.Font.GothamBold
+resetBtn.TextColor3 = Color3.new(1,1,1)
+resetBtn.BackgroundColor3 = Color3.fromRGB(255,80,80)
+Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,8)
+
+-- ================== COPY ==================
+copyBtn.MouseButton1Click:Connect(function()
+    local input = box.Text
+    if input == "" then return end
+
+    local userId = tonumber(input)
+    if not userId then
+        local ok, id = pcall(function()
+            return Players:GetUserIdFromNameAsync(input)
+        end)
+        if ok then userId = id else return end
+    end
+
+    local ok, desc = pcall(function()
+        return Players:GetHumanoidDescriptionFromUserId(userId)
+    end)
+    if not ok then return end
+
+    currentDesc = desc
+    applyAvatar(plr.Character)
+
+    if addedCon then addedCon:Disconnect() end
+    addedCon = plr.CharacterAdded:Connect(applyAvatar)
+end)
+
+-- ================== RESET ==================
+resetBtn.MouseButton1Click:Connect(function()
+    if addedCon then
+        addedCon:Disconnect()
+        addedCon = nil
+    end
+
+    if originalDesc and plr.Character then
+        plr:ClearCharacterAppearance()
+        local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ApplyDescriptionClientServer(originalDesc)
+            isAvatarOriginal = true
+        end
+    end
+end)
+	end
+})
+
+AddButton(1, {
+	Name = "Auto Wall Hop",
+	Callback = function()
+		-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+-- Create Frame
+local frame = Instance.new("Frame")
+frame.Parent = screenGui
+frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0.5, -100, 0.5, -50)
+frame.Active = true
+frame.Draggable = true
+
+-- Create On Button
+local onButton = Instance.new("TextButton")
+onButton.Parent = frame
+onButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+onButton.Size = UDim2.new(0, 60, 0, 30)
+onButton.Position = UDim2.new(0, 20, 0, 20)
+onButton.Text = "BẬT"
+onButton.TextScaled = true
+
+-- Create Off Button
+local offButton = Instance.new("TextButton")
+offButton.Parent = frame
+offButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+offButton.Size = UDim2.new(0, 60, 0, 30)
+offButton.Position = UDim2.new(0, 120, 0, 20)
+offButton.Text = "TẮT"
+offButton.TextScaled = true
+
+-- Create Destroy Button
+local destroyButton = Instance.new("TextButton")
+destroyButton.Parent = frame
+destroyButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+destroyButton.Size = UDim2.new(0, 160, 0, 30)
+destroyButton.Position = UDim2.new(0, 20, 0, 60)
+destroyButton.Text = "Close Ui"
+destroyButton.TextScaled = true
+
+-- Create Status Indicator
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Parent = frame
+statusLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.Size = UDim2.new(0, 200, 0, 30)
+statusLabel.Position = UDim2.new(0, 0, 0, -30)
+statusLabel.Text = "WALL HOP : TẮT"
+statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+statusLabel.TextScaled = true
+
+-- Variables for Wallhop Functionality
+local toggle = false
+local InfiniteJumpEnabled = true -- Acts as debounce
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local raycastParams = RaycastParams.new()
+raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+-- Filter list will be updated dynamically
+
+-- Precise wall detection function - Returns RaycastResult
+local function getWallRaycastResult()
+    local player = Players.LocalPlayer
+    local character = player.Character
+    if not character then return nil end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return nil end
+
+    raycastParams.FilterDescendantsInstances = {character}
+
+    local directions = {
+        humanoidRootPart.CFrame.LookVector,
+        -humanoidRootPart.CFrame.LookVector,
+        humanoidRootPart.CFrame.RightVector,
+        -humanoidRootPart.CFrame.RightVector
+    }
+    local detectionDistance = 2
+    local closestHit = nil
+    local minDistance = detectionDistance + 1
+
+    for _, direction in pairs(directions) do
+        local ray = Workspace:Raycast(
+            humanoidRootPart.Position,
+            direction * detectionDistance,
+            raycastParams
+        )
+        if ray and ray.Instance then
+             if ray.Distance < minDistance then
+                 minDistance = ray.Distance
+                 closestHit = ray
+             end
+        end
+    end
+    return closestHit
+end
+
+-- Button Functions
+onButton.MouseButton1Click:Connect(function()
+    statusLabel.Text = "WALL HOP : BẬT"
+    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    toggle = true
+end)
+
+offButton.MouseButton1Click:Connect(function()
+    statusLabel.Text = "WALL HOP : TẮT"
+    statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    toggle = false
+end)
+
+destroyButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Wallhop Function - ADDED ROTATION BACK TOWARDS WALL
+UserInputService.JumpRequest:Connect(function()
+    if not toggle or not InfiniteJumpEnabled then return end
+
+    local player = Players.LocalPlayer
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    local camera = Workspace.CurrentCamera
+
+    if not (humanoid and rootPart and camera) then return end
+
+    local wallRayResult = getWallRaycastResult()
+
+    if wallRayResult then
+        InfiniteJumpEnabled = false -- Start debounce immediately
+
+        -- 1. Calculate Base Direction Away from Wall
+        local wallNormal = wallRayResult.Normal
+        local horizontalWallNormal = Vector3.new(wallNormal.X, 0, wallNormal.Z).Unit
+        if horizontalWallNormal.Magnitude < 0.1 then
+             horizontalWallNormal = (rootPart.CFrame.LookVector * Vector3.new(1,0,1)).Unit
+             if horizontalWallNormal.Magnitude < 0.1 then horizontalWallNormal = Vector3.new(0,0,-1) end
+        end
+        local baseDirectionAwayFromWall = horizontalWallNormal -- Store this original direction
+
+        -- 2. Get Camera's Horizontal Look Direction
+        local cameraLook = camera.CFrame.LookVector
+        local horizontalCameraLook = Vector3.new(cameraLook.X, 0, cameraLook.Z).Unit
+        if horizontalCameraLook.Magnitude < 0.1 then horizontalCameraLook = baseDirectionAwayFromWall end
+
+        -- 3. Calculate Initial Rotation (Away from Wall, Camera Influenced)
+        local maxInfluenceAngle = math.rad(40)
+        local dot = math.clamp(baseDirectionAwayFromWall:Dot(horizontalCameraLook), -1, 1)
+        local angleBetween = math.acos(dot)
+        local cross = baseDirectionAwayFromWall:Cross(horizontalCameraLook)
+        local rotationSign = math.sign(cross.Y)
+        if rotationSign == 0 then angleBetween = 0 end
+        local actualInfluenceAngle = math.min(angleBetween, maxInfluenceAngle)
+        local adjustmentRotation = CFrame.Angles(0, actualInfluenceAngle * rotationSign, 0)
+        local initialTargetLookDirection = adjustmentRotation * baseDirectionAwayFromWall
+
+        -- 4. Apply Initial Rotation FIRST
+        rootPart.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + initialTargetLookDirection)
+
+        -- 5. Wait a very short moment (one frame)
+        RunService.Heartbeat:Wait()
+
+        -- 6. Apply Jump
+        local didJump = false
+        if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
+             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+             didJump = true -- Track if the jump actually happened
+        end
+
+        -- 7. Apply Rotation BACK towards the wall IF the jump occurred
+        if didJump then
+             local directionTowardsWall = -baseDirectionAwayFromWall -- Reverse the original away direction
+             -- Use the root part's current position as the origin for lookAt
+             rootPart.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + directionTowardsWall)
+        end
+
+        -- Optional: Velocity boost - Consider applying it *after* the jump state change
+        -- if didJump then
+        --    rootPart.Velocity = rootPart.Velocity + initialTargetLookDirection * 20 -- Boost away from wall
+        -- end
+
+        -- Post-jump cooldown
+        task.wait(0.15)
+        InfiniteJumpEnabled = true -- End debounce
+    end
+end)
+	end
+})
 
 
 
