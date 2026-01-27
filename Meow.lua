@@ -1,3 +1,4 @@
+
 --===== CHATGPT HUB KEY SYSTEM =====--
 
 local HttpService = game:GetService("HttpService")
@@ -90,14 +91,13 @@ Logo.Size = UDim2.new(0,50,0,50)
 Logo.Position = UDim2.new(0,20,0.45,0)
 Logo.BackgroundColor3 = Color3.fromRGB(255,190,210)
 Logo.Image = "rbxassetid://75319304126321"
-Logo.AutoButtonColor = false
 Logo.Active = true
 Instance.new("UICorner", Logo).CornerRadius = UDim.new(1,0)
 
 local LogoStroke = Instance.new("UIStroke", Logo)
 LogoStroke.Thickness = 2
 
--- MAIN FRAME (❌ KHÔNG SCALE 1)
+-- MAIN FRAME
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0,380,0,260)
 Main.Position = UDim2.new(0.5,-190,0.5,-130)
@@ -117,7 +117,7 @@ Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(255,20,147)
 
 ------------------------------------------------
--- MENU (FIXED WIDTH)
+-- MENU
 ------------------------------------------------
 
 local Menu = Instance.new("ScrollingFrame", Main)
@@ -126,14 +126,13 @@ Menu.Size = UDim2.new(0,130,1,-60)
 Menu.BackgroundColor3 = Color3.fromRGB(255,140,180)
 Menu.ScrollBarImageTransparency = 1
 Menu.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Menu.ScrollBarThickness = 4
 Instance.new("UICorner", Menu).CornerRadius = UDim.new(0,14)
 
 local MenuLayout = Instance.new("UIListLayout", Menu)
 MenuLayout.Padding = UDim.new(0,6)
 
 ------------------------------------------------
--- CONTENT (AUTO SCROLL)
+-- CONTENT
 ------------------------------------------------
 
 local Content = Instance.new("ScrollingFrame", Main)
@@ -141,7 +140,6 @@ Content.Position = UDim2.new(0,150,0,50)
 Content.Size = UDim2.new(1,-160,1,-60)
 Content.BackgroundColor3 = Color3.fromRGB(255,160,200)
 Content.ScrollBarImageTransparency = 1
-Content.AutomaticCanvasSize = Enum.AutomaticSize.None
 Instance.new("UICorner", Content).CornerRadius = UDim.new(0,14)
 
 local ContentLayout = Instance.new("UIListLayout", Content)
@@ -152,48 +150,106 @@ ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 end)
 
 ------------------------------------------------
--- LOGO TOGGLE + DRAG
+-- TAB SYSTEM (API ĐÚNG)
+------------------------------------------------
+
+local Tabs = {}
+local TabOrder = {}
+local CurrentTab = nil
+
+local function ClearContent()
+	for _, v in ipairs(Content:GetChildren()) do
+		if not v:IsA("UIListLayout") then
+			v:Destroy()
+		end
+	end
+end
+
+function CreateTab(id, name)
+	if Tabs[id] then return end
+
+	Tabs[id] = {
+		Name = name,
+		Items = {}
+	}
+
+	table.insert(TabOrder, id)
+end
+
+function ShowTab(id)
+	if not Tabs[id] then return end
+	if CurrentTab == id then return end
+	CurrentTab = id
+
+	ClearContent()
+
+	for _, build in ipairs(Tabs[id].Items) do
+		build()
+	end
+end
+
+function BuildMenu()
+	for _, v in ipairs(Menu:GetChildren()) do
+		if not v:IsA("UIListLayout") then
+			v:Destroy()
+		end
+	end
+
+	for _, id in ipairs(TabOrder) do
+		local tabData = Tabs[id]
+
+		local btn = Instance.new("TextButton", Menu)
+		btn.Size = UDim2.new(1, -10, 0, 34)
+		btn.BackgroundColor3 = Color3.fromRGB(255,120,170)
+		btn.Text = tabData.Name
+		btn.Font = Enum.Font.Gotham
+		btn.TextSize = 14
+		btn.TextColor3 = Color3.new(1,1,1)
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+
+		btn.MouseButton1Click:Connect(function()
+			ShowTab(id)
+		end)
+	end
+end
+
+function AddButton(tabId, data)
+	if not Tabs[tabId] then return end
+
+	table.insert(Tabs[tabId].Items, function()
+		local btn = Instance.new("TextButton", Content)
+		btn.Size = UDim2.new(1, -10, 0, 36)
+		btn.BackgroundColor3 = Color3.fromRGB(255,90,150)
+		btn.Text = data.Name or ""
+		btn.Font = Enum.Font.Gotham
+		btn.TextSize = 14
+		btn.TextColor3 = Color3.new(1,1,1)
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+
+		btn.MouseButton1Click:Connect(function()
+			if data.Callback then
+				pcall(data.Callback)
+			end
+		end)
+	end)
+end
+
+------------------------------------------------
+-- LOGO TOGGLE
 ------------------------------------------------
 
 Logo.MouseButton1Click:Connect(function()
 	Main.Visible = not Main.Visible
 end)
 
-local dragging, dragStart, startPos
-Logo.InputBegan:Connect(function(i)
-	if i.UserInputType == Enum.UserInputType.MouseButton1
-	or i.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = i.Position
-		startPos = Logo.Position
-	end
-end)
-
-Logo.InputEnded:Connect(function(i)
-	if i.UserInputType == Enum.UserInputType.MouseButton1
-	or i.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
-end)
-
-UIS.InputChanged:Connect(function(i)
-	if dragging then
-		local delta = i.Position - dragStart
-		Logo.Position = UDim2.new(
-			startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
 ------------------------------------------------
 -- RAINBOW BORDER
 ------------------------------------------------
 
-local hue = 0
+local h = 0
 RunService.RenderStepped:Connect(function(dt)
-	hue = (hue + dt * 0.8) % 1
-	LogoStroke.Color = Color3.fromHSV(hue,1,1)
+	h = (h + dt) % 1
+	LogoStroke.Color = Color3.fromHSV(h,1,1)
 end)
 
 -- Tab + Button
