@@ -1190,8 +1190,773 @@ end)
 	end
 })
 
+AddButton(1, {
+	Name = "AimBot",
+	Callback = function()
+		-- Simple aimbot
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local mouse = localPlayer:GetMouse()
 
+mouse.Button2Down:Connect(function()
+    local target = getClosestPlayer()
+    if target and target.Character and target.Character:FindFirstChild("Head") then
+        localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(
+            localPlayer.Character.HumanoidRootPart.Position,
+            target.Character.Head.Position
+        )
+    end
+end)
 
+function getClosestPlayer()
+    local closest = nil
+    local maxDist = math.huge
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local dist = (player.Character.Head.Position - mouse.Hit.p).Magnitude
+            if dist < maxDist then
+                maxDist = dist
+                closest = player
+            end
+        end
+    end
+    return closest
+end
+	end
+})
+
+AddButton(1, {
+	Name = "Noclip",
+	Callback = function()
+	-- Noclip script
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local noclip = false
+
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.N then
+        noclip = not noclip
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = not noclip
+            end
+        end
+    end
+end)	
+	end
+})
+
+AddButton(1, {
+	Name = "Infinity Jump",
+	Callback = function()
+		-- Infinite jump
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Space then
+        player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+	end
+})
+
+AddButton(1, {
+	Name = "Point",
+	Callback = function()
+		-- POINT MANAGER - Tạo, Xóa, Teleport đến Point
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- LƯU TRỮ POINTS
+local SavedPoints = {}
+local PointMarkers = {} -- Lưu các marker trong game
+local CurrentSelectedPoint = nil
+
+-- MÀU SẮC
+local Colors = {
+    Primary = Color3.fromRGB(52, 152, 219),
+    Secondary = Color3.fromRGB(41, 128, 185),
+    Success = Color3.fromRGB(46, 204, 113),
+    Danger = Color3.fromRGB(231, 76, 60),
+    Warning = Color3.fromRGB(241, 196, 15),
+    Dark = Color3.fromRGB(44, 62, 80),
+    Light = Color3.fromRGB(236, 240, 241)
+}
+
+-- TẠO MARKER TRONG GAME
+function createPointMarker(position, index)
+    -- Tạo part đánh dấu
+    local marker = Instance.new("Part")
+    marker.Name = "PointMarker_" .. index
+    marker.Size = Vector3.new(2, 2, 2)
+    marker.Position = position
+    marker.Anchored = true
+    marker.CanCollide = false
+    marker.Material = Enum.Material.Neon
+    marker.BrickColor = BrickColor.new("Bright blue")
+    marker.Transparency = 0.3
+    
+    -- Billboard GUI hiển thị số
+    local billboard = Instance.new("BillboardGui")
+    billboard.Size = UDim2.new(0, 100, 0, 100)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = marker
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Text = "Point " .. index
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.Parent = billboard
+    
+    -- Hiệu ứng nhấp nháy
+    spawn(function()
+        while marker and marker.Parent do
+            marker.Transparency = 0.2
+            wait(0.5)
+            marker.Transparency = 0.5
+            wait(0.5)
+        end
+    end)
+    
+    marker.Parent = workspace
+    PointMarkers[index] = marker
+    return marker
+end
+
+-- XÓA MARKER
+function removePointMarker(index)
+    if PointMarkers[index] then
+        PointMarkers[index]:Destroy()
+        PointMarkers[index] = nil
+    end
+end
+
+-- TẠO GUI CHÍNH
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PointManagerGUI"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- MAIN FRAME
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.05, 0, 0.5, -200)
+MainFrame.BackgroundColor3 = Colors.Dark
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Corner
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = MainFrame
+
+-- Stroke
+local stroke = Instance.new("UIStroke")
+stroke.Color = Colors.Primary
+stroke.Thickness = 2
+stroke.Parent = MainFrame
+
+-- TITLE
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Text = "📍 POINT MANAGER BY A.HAO"
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = Colors.Primary
+Title.TextColor3 = Colors.Light
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
+
+-- Title Corner
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = Title
+
+-- BODY FRAME
+local BodyFrame = Instance.new("Frame")
+BodyFrame.Name = "BodyFrame"
+BodyFrame.Size = UDim2.new(1, -20, 1, -70)
+BodyFrame.Position = UDim2.new(0, 10, 0, 60)
+BodyFrame.BackgroundTransparency = 1
+BodyFrame.Parent = MainFrame
+
+-- CREATE BUTTON (TẠO POINT)
+local CreateBtn = Instance.new("TextButton")
+CreateBtn.Name = "CreateBtn"
+CreateBtn.Text = "➕ TẠO POINT"
+CreateBtn.Size = UDim2.new(1, 0, 0, 45)
+CreateBtn.Position = UDim2.new(0, 0, 0, 0)
+CreateBtn.BackgroundColor3 = Colors.Success
+CreateBtn.TextColor3 = Colors.Light
+CreateBtn.Font = Enum.Font.GothamBold
+CreateBtn.TextSize = 14
+CreateBtn.Parent = BodyFrame
+
+-- Teleport Button
+local TeleportBtn = Instance.new("TextButton")
+TeleportBtn.Name = "TeleportBtn"
+TeleportBtn.Text = "🚀 TELE TO POINT"
+TeleportBtn.Size = UDim2.new(1, 0, 0, 45)
+TeleportBtn.Position = UDim2.new(0, 0, 0, 55)
+TeleportBtn.BackgroundColor3 = Colors.Primary
+TeleportBtn.TextColor3 = Colors.Light
+TeleportBtn.Font = Enum.Font.GothamBold
+TeleportBtn.TextSize = 14
+TeleportBtn.Parent = BodyFrame
+
+-- Delete Button
+local DeleteBtn = Instance.new("TextButton")
+DeleteBtn.Name = "DeleteBtn"
+DeleteBtn.Text = "🗑️ XÓA POINT"
+DeleteBtn.Size = UDim2.new(1, 0, 0, 45)
+DeleteBtn.Position = UDim2.new(0, 0, 0, 110)
+DeleteBtn.BackgroundColor3 = Colors.Danger
+DeleteBtn.TextColor3 = Colors.Light
+DeleteBtn.Font = Enum.Font.GothamBold
+DeleteBtn.TextSize = 14
+DeleteBtn.Parent = BodyFrame
+
+-- Points List Label
+local ListLabel = Instance.new("TextLabel")
+ListLabel.Name = "ListLabel"
+ListLabel.Text = "📋 DANH SÁCH POINTS:"
+ListLabel.Size = UDim2.new(1, 0, 0, 30)
+ListLabel.Position = UDim2.new(0, 0, 0, 170)
+ListLabel.BackgroundTransparency = 1
+ListLabel.TextColor3 = Colors.Light
+ListLabel.Font = Enum.Font.GothamBold
+ListLabel.TextSize = 14
+ListLabel.TextXAlignment = Enum.TextXAlignment.Left
+ListLabel.Parent = BodyFrame
+
+-- Scroll Frame for Points List
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Name = "ScrollFrame"
+ScrollFrame.Size = UDim2.new(1, 0, 0, 150)
+ScrollFrame.Position = UDim2.new(0, 0, 0, 200)
+ScrollFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ScrollFrame.BackgroundTransparency = 0.2
+ScrollFrame.ScrollBarThickness = 5
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollFrame.Parent = BodyFrame
+
+-- List Layout
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 5)
+ListLayout.Parent = ScrollFrame
+
+ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y)
+end)
+
+-- UPDATE POINTS LIST
+function updatePointsList()
+    -- Xóa tất cả các item cũ
+    for _, child in pairs(ScrollFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    -- Thêm các point mới
+    for index, pointData in pairs(SavedPoints) do
+        local pointBtn = Instance.new("TextButton")
+        pointBtn.Name = "Point_" .. index
+        pointBtn.Text = "📍 Point " .. index .. "\n" .. string.format("X:%.1f Y:%.1f Z:%.1f", 
+            pointData.Position.X, pointData.Position.Y, pointData.Position.Z)
+        pointBtn.Size = UDim2.new(1, -10, 0, 40)
+        pointBtn.Position = UDim2.new(0, 5, 0, 0)
+        pointBtn.BackgroundColor3 = Colors.Secondary
+        pointBtn.TextColor3 = Colors.Light
+        pointBtn.Font = Enum.Font.Gotham
+        pointBtn.TextSize = 12
+        pointBtn.TextWrapped = true
+        pointBtn.Parent = ScrollFrame
+        
+        -- Corner
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 5)
+        btnCorner.Parent = pointBtn
+        
+        -- Stroke
+        local btnStroke = Instance.new("UIStroke")
+        btnStroke.Color = Colors.Primary
+        btnStroke.Thickness = 1
+        btnStroke.Parent = pointBtn
+        
+        -- Click để chọn point
+        pointBtn.MouseButton1Click:Connect(function()
+            CurrentSelectedPoint = index
+            -- Highlight point được chọn
+            for _, btn in pairs(ScrollFrame:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    if btn.Name == "Point_" .. index then
+                        btn.BackgroundColor3 = Colors.Warning
+                        btn.TextColor3 = Colors.Dark
+                    else
+                        btn.BackgroundColor3 = Colors.Secondary
+                        btn.TextColor3 = Colors.Light
+                    end
+                end
+            end
+        end)
+        
+        -- Double click để teleport
+        local lastClickTime = 0
+        pointBtn.MouseButton1Click:Connect(function()
+            local currentTime = tick()
+            if currentTime - lastClickTime < 0.3 then -- Double click trong 0.3 giây
+                teleportToPoint(index)
+            end
+            lastClickTime = currentTime
+        end)
+    end
+    
+    -- Nếu không có point nào
+    if #SavedPoints == 0 then
+        local emptyLabel = Instance.new("TextLabel")
+        emptyLabel.Text = "Chưa có point nào được tạo"
+        emptyLabel.Size = UDim2.new(1, 0, 0, 30)
+        emptyLabel.BackgroundTransparency = 1
+        emptyLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+        emptyLabel.Font = Enum.Font.Gotham
+        emptyLabel.TextSize = 12
+        emptyLabel.Parent = ScrollFrame
+    end
+end
+
+-- TẠO DELETE MENU (Mở khi nhấn XÓA POINT)
+local DeleteMenu = Instance.new("Frame")
+DeleteMenu.Name = "DeleteMenu"
+DeleteMenu.Size = UDim2.new(0, 350, 0, 300)
+DeleteMenu.Position = UDim2.new(0.5, -175, 0.5, -150)
+DeleteMenu.BackgroundColor3 = Colors.Dark
+DeleteMenu.Visible = false
+DeleteMenu.Active = true
+DeleteMenu.Draggable = true
+DeleteMenu.Parent = ScreenGui
+
+-- Delete Menu Corner
+local deleteCorner = Instance.new("UICorner")
+deleteCorner.CornerRadius = UDim.new(0, 10)
+deleteCorner.Parent = DeleteMenu
+
+-- Delete Menu Stroke
+local deleteStroke = Instance.new("UIStroke")
+deleteStroke.Color = Colors.Danger
+deleteStroke.Thickness = 2
+deleteStroke.Parent = DeleteMenu
+
+-- Delete Menu Title
+local DeleteTitle = Instance.new("TextLabel")
+DeleteTitle.Text = "🗑️ CHỌN POINT ĐỂ XÓA"
+DeleteTitle.Size = UDim2.new(1, 0, 0, 50)
+DeleteTitle.BackgroundColor3 = Colors.Danger
+DeleteTitle.TextColor3 = Colors.Light
+DeleteTitle.Font = Enum.Font.GothamBold
+DeleteTitle.TextSize = 16
+DeleteTitle.Parent = DeleteMenu
+
+-- Delete Scroll Frame
+local DeleteScrollFrame = Instance.new("ScrollingFrame")
+DeleteScrollFrame.Size = UDim2.new(1, -20, 1, -120)
+DeleteScrollFrame.Position = UDim2.new(0, 10, 0, 60)
+DeleteScrollFrame.BackgroundTransparency = 1
+DeleteScrollFrame.ScrollBarThickness = 5
+DeleteScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+DeleteScrollFrame.Parent = DeleteMenu
+
+-- Delete List Layout
+local DeleteListLayout = Instance.new("UIListLayout")
+DeleteListLayout.Padding = UDim.new(0, 5)
+DeleteListLayout.Parent = DeleteScrollFrame
+
+DeleteListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    DeleteScrollFrame.CanvasSize = UDim2.new(0, 0, 0, DeleteListLayout.AbsoluteContentSize.Y)
+end)
+
+-- Close Delete Menu Button
+local CloseDeleteBtn = Instance.new("TextButton")
+CloseDeleteBtn.Text = "✖️ ĐÓNG"
+CloseDeleteBtn.Size = UDim2.new(0.4, 0, 0, 40)
+CloseDeleteBtn.Position = UDim2.new(0.3, 0, 1, -50)
+CloseDeleteBtn.BackgroundColor3 = Colors.Secondary
+CloseDeleteBtn.TextColor3 = Colors.Light
+CloseDeleteBtn.Font = Enum.Font.GothamBold
+CloseDeleteBtn.TextSize = 14
+CloseDeleteBtn.Parent = DeleteMenu
+
+-- TẠO TELEPORT MENU (Mở khi nhấn TELE TO POINT)
+local TeleportMenu = Instance.new("Frame")
+TeleportMenu.Name = "TeleportMenu"
+TeleportMenu.Size = UDim2.new(0, 350, 0, 300)
+TeleportMenu.Position = UDim2.new(0.5, -175, 0.5, -150)
+TeleportMenu.BackgroundColor3 = Colors.Dark
+TeleportMenu.Visible = false
+TeleportMenu.Active = true
+TeleportMenu.Draggable = true
+TeleportMenu.Parent = ScreenGui
+
+-- Teleport Menu Corner
+local teleCorner = Instance.new("UICorner")
+teleCorner.CornerRadius = UDim.new(0, 10)
+teleCorner.Parent = TeleportMenu
+
+-- Teleport Menu Stroke
+local teleStroke = Instance.new("UIStroke")
+teleStroke.Color = Colors.Primary
+teleStroke.Thickness = 2
+teleStroke.Parent = TeleportMenu
+
+-- Teleport Menu Title
+local TeleTitle = Instance.new("TextLabel")
+TeleTitle.Text = "🚀 CHỌN POINT ĐỂ TELEPORT"
+TeleTitle.Size = UDim2.new(1, 0, 0, 50)
+TeleTitle.BackgroundColor3 = Colors.Primary
+TeleTitle.TextColor3 = Colors.Light
+TeleTitle.Font = Enum.Font.GothamBold
+TeleTitle.TextSize = 16
+TeleTitle.Parent = TeleportMenu
+
+-- Teleport Scroll Frame
+local TeleScrollFrame = Instance.new("ScrollingFrame")
+TeleScrollFrame.Size = UDim2.new(1, -20, 1, -120)
+TeleScrollFrame.Position = UDim2.new(0, 10, 0, 60)
+TeleScrollFrame.BackgroundTransparency = 1
+TeleScrollFrame.ScrollBarThickness = 5
+TeleScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+TeleScrollFrame.Parent = TeleportMenu
+
+-- Teleport List Layout
+local TeleListLayout = Instance.new("UIListLayout")
+TeleListLayout.Padding = UDim.new(0, 5)
+TeleListLayout.Parent = TeleScrollFrame
+
+TeleListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    TeleScrollFrame.CanvasSize = UDim2.new(0, 0, 0, TeleListLayout.AbsoluteContentSize.Y)
+end)
+
+-- Close Teleport Menu Button
+local CloseTeleBtn = Instance.new("TextButton")
+CloseTeleBtn.Text = "✖️ ĐÓNG"
+CloseTeleBtn.Size = UDim2.new(0.4, 0, 0, 40)
+CloseTeleBtn.Position = UDim2.new(0.3, 0, 1, -50)
+CloseTeleBtn.BackgroundColor3 = Colors.Secondary
+CloseTeleBtn.TextColor3 = Colors.Light
+CloseTeleBtn.Font = Enum.Font.GothamBold
+CloseTeleBtn.TextSize = 14
+CloseTeleBtn.Parent = TeleportMenu
+
+-- HÀM TẠO POINT
+function createNewPoint()
+    local character = LocalPlayer.Character
+    if not character then
+        warn("Không tìm thấy character!")
+        return
+    end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        warn("Không tìm thấy HumanoidRootPart!")
+        return
+    end
+    
+    local newIndex = #SavedPoints + 1
+    local position = root.Position
+    
+    -- Lưu point
+    SavedPoints[newIndex] = {
+        Position = position,
+        TimeCreated = os.time(),
+        Name = "Point " .. newIndex
+    }
+    
+    -- Tạo marker trong game
+    createPointMarker(position, newIndex)
+    
+    -- Update UI
+    updatePointsList()
+    
+    -- Hiệu ứng button
+    CreateBtn.Text = "✅ ĐÃ TẠO POINT " .. newIndex
+    CreateBtn.BackgroundColor3 = Colors.Success
+    wait(1)
+    CreateBtn.Text = "➕ TẠO POINT"
+    CreateBtn.BackgroundColor3 = Colors.Success
+    
+    print("✅ Đã tạo Point " .. newIndex .. " tại vị trí: " .. tostring(position))
+end
+
+-- HÀM XÓA POINT
+function deletePoint(index)
+    if SavedPoints[index] then
+        -- Xóa marker trong game
+        removePointMarker(index)
+        
+        -- Xóa khỏi danh sách
+        SavedPoints[index] = nil
+        
+        -- Sắp xếp lại indexes
+        local newPoints = {}
+        local newIndex = 1
+        for _, pointData in pairs(SavedPoints) do
+            newPoints[newIndex] = pointData
+            newIndex = newIndex + 1
+        end
+        
+        SavedPoints = newPoints
+        
+        -- Xóa tất cả markers và tạo lại
+        for i, marker in pairs(PointMarkers) do
+            if marker then marker:Destroy() end
+        end
+        PointMarkers = {}
+        
+        -- Tạo lại markers
+        for i, pointData in pairs(SavedPoints) do
+            createPointMarker(pointData.Position, i)
+        end
+        
+        -- Update UI
+        updatePointsList()
+        updateDeleteMenu()
+        updateTeleportMenu()
+        
+        CurrentSelectedPoint = nil
+        
+        print("🗑️ Đã xóa Point " .. index)
+    end
+end
+
+-- HÀM TELEPORT ĐẾN POINT
+function teleportToPoint(index)
+    if not SavedPoints[index] then
+        warn("Point không tồn tại!")
+        return
+    end
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    local targetPosition = SavedPoints[index].Position
+    
+    -- Hiệu ứng trước khi teleport
+    TeleportBtn.Text = "⚡ ĐANG TELEPORT..."
+    TeleportBtn.BackgroundColor3 = Colors.Warning
+    
+    -- Teleport
+    root.CFrame = CFrame.new(targetPosition)
+    
+    -- Hiệu ứng sau khi teleport
+    wait(0.5)
+    TeleportBtn.Text = "✅ ĐÃ TELEPORT!"
+    wait(1)
+    TeleportBtn.Text = "🚀 TELE TO POINT"
+    TeleportBtn.BackgroundColor3 = Colors.Primary
+    
+    print("🚀 Đã teleport đến Point " .. index)
+end
+
+-- UPDATE DELETE MENU
+function updateDeleteMenu()
+    -- Xóa tất cả các item cũ
+    for _, child in pairs(DeleteScrollFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    -- Thêm các point vào delete menu
+    for index, pointData in pairs(SavedPoints) do
+        local deleteBtn = Instance.new("TextButton")
+        deleteBtn.Text = "🗑️ Point " .. index .. "\n" .. string.format("X:%.1f Y:%.1f Z:%.1f", 
+            pointData.Position.X, pointData.Position.Y, pointData.Position.Z)
+        deleteBtn.Size = UDim2.new(1, -10, 0, 50)
+        deleteBtn.Position = UDim2.new(0, 5, 0, 0)
+        deleteBtn.BackgroundColor3 = Colors.Danger
+        deleteBtn.BackgroundTransparency = 0.3
+        deleteBtn.TextColor3 = Colors.Light
+        deleteBtn.Font = Enum.Font.Gotham
+        deleteBtn.TextSize = 12
+        deleteBtn.TextWrapped = true
+        deleteBtn.Parent = DeleteScrollFrame
+        
+        -- Corner
+        local delCorner = Instance.new("UICorner")
+        delCorner.CornerRadius = UDim.new(0, 5)
+        delCorner.Parent = deleteBtn
+        
+        -- Stroke
+        local delStroke = Instance.new("UIStroke")
+        delStroke.Color = Colors.Danger
+        delStroke.Thickness = 2
+        delStroke.Parent = deleteBtn
+        
+        -- Click để xóa
+        deleteBtn.MouseButton1Click:Connect(function()
+            deletePoint(index)
+        end)
+    end
+    
+    -- Nếu không có point nào
+    if #SavedPoints == 0 then
+        local emptyLabel = Instance.new("TextLabel")
+        emptyLabel.Text = "Không có point nào để xóa"
+        emptyLabel.Size = UDim2.new(1, 0, 0, 30)
+        emptyLabel.BackgroundTransparency = 1
+        emptyLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+        emptyLabel.Font = Enum.Font.Gotham
+        emptyLabel.TextSize = 12
+        emptyLabel.Parent = DeleteScrollFrame
+    end
+end
+
+-- UPDATE TELEPORT MENU
+function updateTeleportMenu()
+    -- Xóa tất cả các item cũ
+    for _, child in pairs(TeleScrollFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    -- Thêm các point vào teleport menu
+    for index, pointData in pairs(SavedPoints) do
+        local teleBtn = Instance.new("TextButton")
+        teleBtn.Text = "🚀 Point " .. index .. "\n" .. string.format("X:%.1f Y:%.1f Z:%.1f", 
+            pointData.Position.X, pointData.Position.Y, pointData.Position.Z)
+        teleBtn.Size = UDim2.new(1, -10, 0, 50)
+        teleBtn.Position = UDim2.new(0, 5, 0, 0)
+        teleBtn.BackgroundColor3 = Colors.Primary
+        teleBtn.BackgroundTransparency = 0.3
+        teleBtn.TextColor3 = Colors.Light
+        teleBtn.Font = Enum.Font.Gotham
+        teleBtn.TextSize = 12
+        teleBtn.TextWrapped = true
+        teleBtn.Parent = TeleScrollFrame
+        
+        -- Corner
+        local teleBtnCorner = Instance.new("UICorner")
+        teleBtnCorner.CornerRadius = UDim.new(0, 5)
+        teleBtnCorner.Parent = teleBtn
+        
+        -- Stroke
+        local teleBtnStroke = Instance.new("UIStroke")
+        teleBtnStroke.Color = Colors.Primary
+        teleBtnStroke.Thickness = 2
+        teleBtnStroke.Parent = teleBtn
+        
+        -- Click để teleport
+        teleBtn.MouseButton1Click:Connect(function()
+            teleportToPoint(index)
+            TeleportMenu.Visible = false
+        end)
+    end
+    
+    -- Nếu không có point nào
+    if #SavedPoints == 0 then
+        local emptyLabel = Instance.new("TextLabel")
+        emptyLabel.Text = "Không có point nào để teleport"
+        emptyLabel.Size = UDim2.new(1, 0, 0, 30)
+        emptyLabel.BackgroundTransparency = 1
+        emptyLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+        emptyLabel.Font = Enum.Font.Gotham
+        emptyLabel.TextSize = 12
+        emptyLabel.Parent = TeleScrollFrame
+    end
+end
+
+-- BUTTON CLICK HANDLERS
+CreateBtn.MouseButton1Click:Connect(function()
+    createNewPoint()
+end)
+
+DeleteBtn.MouseButton1Click:Connect(function()
+    updateDeleteMenu()
+    DeleteMenu.Visible = true
+    TeleportMenu.Visible = false
+end)
+
+TeleportBtn.MouseButton1Click:Connect(function()
+    updateTeleportMenu()
+    TeleportMenu.Visible = true
+    DeleteMenu.Visible = false
+end)
+
+CloseDeleteBtn.MouseButton1Click:Connect(function()
+    DeleteMenu.Visible = false
+end)
+
+CloseTeleBtn.MouseButton1Click:Connect(function()
+    TeleportMenu.Visible = false
+end)
+
+-- KEYBINDS
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    -- Tạo point với phím C
+    if input.KeyCode == Enum.KeyCode.C then
+        createNewPoint()
+    end
+    
+    -- Teleport đến point đang chọn với phím T
+    if input.KeyCode == Enum.KeyCode.T then
+        if CurrentSelectedPoint then
+            teleportToPoint(CurrentSelectedPoint)
+        else
+            warn("Chưa chọn point nào!")
+        end
+    end
+    
+    -- Mở menu xóa với phím X
+    if input.KeyCode == Enum.KeyCode.X then
+        updateDeleteMenu()
+        DeleteMenu.Visible = not DeleteMenu.Visible
+        TeleportMenu.Visible = false
+    end
+    
+    -- Mở menu teleport với phím V
+    if input.KeyCode == Enum.KeyCode.V then
+        updateTeleportMenu()
+        TeleportMenu.Visible = not TeleportMenu.Visible
+        DeleteMenu.Visible = false
+    end
+end)
+
+-- LOAD SAVED POINTS (nếu có)
+function loadSavedPoints()
+    -- Ở đây bạn có thể thêm code để load points từ file
+    -- Ví dụ: if isfile("points.json") then SavedPoints = HttpService:JSONDecode(readfile("points.json")) end
+    print("✅ Point Manager đã sẵn sàng!")
+    print("📌 C - Tạo point tại vị trí hiện tại")
+    print("📌 T - Teleport đến point đang chọn")
+    print("📌 X - Mở menu xóa point")
+    print("📌 V - Mở menu teleport")
+end
+
+-- KHỞI TẠO
+wait(2)
+loadSavedPoints()
+updatePointsList()
+
+print("🎯 Point Manager Script Loaded!")
+	end
+})
 
 
 
