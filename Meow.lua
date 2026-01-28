@@ -36,6 +36,7 @@ if not (savedKey and isValidKey(savedKey)) then
 	Frame.BackgroundColor3 = Color3.fromRGB(255,170,200)
 	Frame.Active = true
 	Frame.Draggable = true
+	Frame.BorderSizePixel = 0
 	Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,16)
 
 	local Title = Instance.new("TextLabel", Frame)
@@ -53,6 +54,8 @@ if not (savedKey and isValidKey(savedKey)) then
 	Box.Text = ""
 	Box.Font = Enum.Font.Gotham
 	Box.TextSize = 14
+	Box.BorderSizePixel = 0
+	Box.BackgroundColor3 = Color3.fromRGB(255,200,220)
 	Instance.new("UICorner", Box).CornerRadius = UDim.new(0,8)
 
 	local Btn = Instance.new("TextButton", Frame)
@@ -62,6 +65,7 @@ if not (savedKey and isValidKey(savedKey)) then
 	Btn.Font = Enum.Font.GothamBold
 	Btn.TextSize = 15
 	Btn.BackgroundColor3 = Color3.fromRGB(255,120,170)
+	Btn.BorderSizePixel = 0
 	Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,8)
 
 	Btn.MouseButton1Click:Connect(function()
@@ -92,11 +96,13 @@ Logo.Image = "rbxassetid://75319304126321"
 Logo.AutoButtonColor = false
 Logo.Active = true
 Logo.Draggable = true
+Logo.BorderSizePixel = 0
 Instance.new("UICorner", Logo).CornerRadius = UDim.new(1,0)
 
 local LogoStroke = Instance.new("UIStroke", Logo)
 LogoStroke.Thickness = 2
 LogoStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+LogoStroke.Color = Color3.fromRGB(255,100,150)
 
 -- RAINBOW VIỀN
 task.spawn(function()
@@ -116,14 +122,54 @@ Main.BackgroundColor3 = Color3.fromRGB(255,170,200)
 Main.Visible = false
 Main.Active = true
 Main.Draggable = true
+Main.BorderSizePixel = 0
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
+
+-- Thêm viền hồng cho Main
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Thickness = 2
+MainStroke.Color = Color3.fromRGB(255,100,150)
 
 Logo.MouseButton1Click:Connect(function()
 	Main.Visible = not Main.Visible
 end)
 
 ------------------------------------------------
--- TAB SYSTEM (LOGIC CŨ)
+-- TITLE (HEADER)
+------------------------------------------------
+
+local TitleFrame = Instance.new("Frame", Main)
+TitleFrame.Size = UDim2.new(1, 0, 0, 40)
+TitleFrame.Position = UDim2.new(0, 0, 0, 10)
+TitleFrame.BackgroundTransparency = 1
+TitleFrame.BorderSizePixel = 0
+
+local Title = Instance.new("TextLabel", TitleFrame)
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🗿 Meow Hub 🚀"
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 24
+Title.TextColor3 = Color3.fromRGB(255, 20, 147)
+Title.TextStrokeTransparency = 0.7
+Title.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Hiệu ứng nhấp nháy cho title
+task.spawn(function()
+    while Title.Parent do
+        for i = 1, 10 do
+            Title.TextTransparency = 0.3 + (i * 0.07)
+            task.wait(0.05)
+        end
+        for i = 1, 10 do
+            Title.TextTransparency = 1 - (i * 0.07)
+            task.wait(0.05)
+        end
+    end
+end)
+
+------------------------------------------------
+-- TAB SYSTEM (SỬA LẠI THEO LOGIC CŨ)
 ------------------------------------------------
 
 local Tabs = {}
@@ -133,26 +179,54 @@ local TabButtons = Instance.new("Frame", Main)
 TabButtons.Size = UDim2.new(1,-20,0,40)
 TabButtons.Position = UDim2.new(0,10,0,10)
 TabButtons.BackgroundTransparency = 1
+TabButtons.BorderSizePixel = 0
+
+-- Layout ngang cho tab buttons
+local TabLayout = Instance.new("UIListLayout", TabButtons)
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.Padding = UDim.new(0, 5)
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
 local Content = Instance.new("Frame", Main)
 Content.Size = UDim2.new(1,-20,1,-70)
 Content.Position = UDim2.new(0,10,0,60)
 Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
 
-function CreateTab(id, name)
-	local btn = Instance.new("TextButton", TabButtons)
-	btn.Size = UDim2.new(0,100,1,0)
+function CreateTab(tabId, name)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0,80,0,30)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 14
+	btn.TextSize = 13
 	btn.BackgroundColor3 = Color3.fromRGB(255,140,180)
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
+	btn.BorderSizePixel = 0
+	btn.Parent = TabButtons
+	
+	-- Hiệu ứng hover
+	btn.MouseEnter:Connect(function()
+		btn.BackgroundColor3 = Color3.fromRGB(255,120,160)
+	end)
+	
+	btn.MouseLeave:Connect(function()
+		if CurrentTab == tabId then
+			btn.BackgroundColor3 = Color3.fromRGB(255,100,140)
+		else
+			btn.BackgroundColor3 = Color3.fromRGB(255,140,180)
+		end
+	end)
+	
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
 
 	local frame = Instance.new("ScrollingFrame", Content)
 	frame.Size = UDim2.new(1,0,1,0)
 	frame.CanvasSize = UDim2.new(0,0,0,0)
 	frame.ScrollBarImageTransparency = 1
+	frame.ScrollingDirection = Enum.ScrollingDirection.Y
 	frame.Visible = false
+	frame.BorderSizePixel = 0
+	frame.BackgroundTransparency = 1
 
 	local layout = Instance.new("UIListLayout", frame)
 	layout.Padding = UDim.new(0,6)
@@ -161,40 +235,62 @@ function CreateTab(id, name)
 	end)
 
 	btn.MouseButton1Click:Connect(function()
-		ShowTab(id)
+		ShowTab(tabId)
 	end)
 
-	Tabs[id] = {Button = btn, Frame = frame}
+	Tabs[tabId] = {Button = btn, Frame = frame}
 end
 
-function ShowTab(id)
-	for _,t in pairs(Tabs) do
+function ShowTab(tabId)
+	for id, t in pairs(Tabs) do
 		t.Frame.Visible = false
+		if id == tabId then
+			t.Button.BackgroundColor3 = Color3.fromRGB(255,100,140)
+		else
+			t.Button.BackgroundColor3 = Color3.fromRGB(255,140,180)
+		end
 	end
-	if Tabs[id] then
-		Tabs[id].Frame.Visible = true
-		CurrentTab = id
+	if Tabs[tabId] then
+		Tabs[tabId].Frame.Visible = true
+		CurrentTab = tabId
 	end
-end
-
-function BuildMenu()
-	-- giữ trống cho đúng logic m
 end
 
 function AddButton(tabId, data)
+	if not Tabs[tabId] then 
+		warn("Tab " .. tabId .. " không tồn tại!")
+		return 
+	end
+	
 	local btn = Instance.new("TextButton", Tabs[tabId].Frame)
-	btn.Size = UDim2.new(1,-10,0,36)
+	btn.Size = UDim2.new(1,0,0,36)
 	btn.Text = data.Name or "Button"
 	btn.Font = Enum.Font.Gotham
 	btn.TextSize = 14
 	btn.BackgroundColor3 = Color3.fromRGB(255,150,190)
+	btn.BorderSizePixel = 0
+	btn.AutoButtonColor = true
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+	
+	-- Hiệu ứng hover
+	btn.MouseEnter:Connect(function()
+		btn.BackgroundColor3 = Color3.fromRGB(255,130,170)
+	end)
+	
+	btn.MouseLeave:Connect(function()
+		btn.BackgroundColor3 = Color3.fromRGB(255,150,190)
+	end)
 
 	btn.MouseButton1Click:Connect(function()
 		if data.Callback then
 			data.Callback()
 		end
 	end)
+	
+	return btn
+end
+
+function BuildMenu()
 end
 
 
