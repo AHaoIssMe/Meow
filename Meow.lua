@@ -27,52 +27,53 @@ local function isValidKey(key)
 end
 
 if not (savedKey and isValidKey(savedKey)) then
-	local gui = Instance.new("ScreenGui", game.CoreGui)
-	gui.ResetOnSpawn = false
+	local KeyGui = Instance.new("ScreenGui", game.CoreGui)
+	KeyGui.ResetOnSpawn = false
 
-	local frame = Instance.new("Frame", gui)
-	frame.Size = UDim2.new(0,300,0,160)
-	frame.Position = UDim2.new(0.5,-150,0.5,-80)
-	frame.BackgroundColor3 = Color3.fromRGB(255,170,200)
-	frame.Active = true
-	frame.Draggable = true
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0,16)
+	local Frame = Instance.new("Frame", KeyGui)
+	Frame.Size = UDim2.new(0,300,0,160)
+	Frame.Position = UDim2.new(0.5,-150,0.5,-80)
+	Frame.BackgroundColor3 = Color3.fromRGB(255,170,200)
+	Frame.Active = true
+	Frame.Draggable = true
+	Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,16)
 
-	local title = Instance.new("TextLabel", frame)
-	title.Size = UDim2.new(1,0,0,35)
-	title.BackgroundTransparency = 1
-	title.Text = "🔑 KEY SYSTEM"
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 18
-	title.TextColor3 = Color3.fromRGB(255,20,147)
+	local Title = Instance.new("TextLabel", Frame)
+	Title.Size = UDim2.new(1,0,0,35)
+	Title.BackgroundTransparency = 1
+	Title.Text = "🔑 KEY SYSTEM"
+	Title.Font = Enum.Font.GothamBold
+	Title.TextSize = 18
+	Title.TextColor3 = Color3.fromRGB(255,20,147)
 
-	local box = Instance.new("TextBox", frame)
-	box.PlaceholderText = "Enter Key..."
-	box.Size = UDim2.new(1,-30,0,40)
-	box.Position = UDim2.new(0,15,0,55)
-	box.BackgroundColor3 = Color3.fromRGB(255,200,220)
-	box.Text = ""
-	box.ClearTextOnFocus = false
-	Instance.new("UICorner", box).CornerRadius = UDim.new(0,12)
+	local Box = Instance.new("TextBox", Frame)
+	Box.PlaceholderText = "Enter Key..."
+	Box.Size = UDim2.new(1,-30,0,36)
+	Box.Position = UDim2.new(0,15,0,55)
+	Box.Text = ""
+	Box.Font = Enum.Font.Gotham
+	Box.TextSize = 14
+	Instance.new("UICorner", Box).CornerRadius = UDim.new(0,8)
 
-	local btn = Instance.new("TextButton", frame)
-	btn.Size = UDim2.new(1,-30,0,35)
-	btn.Position = UDim2.new(0,15,0,105)
-	btn.Text = "LOGIN"
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 16
-	btn.BackgroundColor3 = Color3.fromRGB(255,120,180)
-	btn.TextColor3 = Color3.new(1,1,1)
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
+	local Btn = Instance.new("TextButton", Frame)
+	Btn.Size = UDim2.new(1,-30,0,36)
+	Btn.Position = UDim2.new(0,15,0,105)
+	Btn.Text = "LOGIN"
+	Btn.Font = Enum.Font.GothamBold
+	Btn.TextSize = 15
+	Btn.BackgroundColor3 = Color3.fromRGB(255,120,170)
+	Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,8)
 
-	btn.MouseButton1Click:Connect(function()
-		if isValidKey(box.Text) then
-			writefile(KEY_FILE, HttpService:JSONEncode({key = box.Text}))
-			gui:Destroy()
+	Btn.MouseButton1Click:Connect(function()
+		if isValidKey(Box.Text) then
+			writefile(KEY_FILE, HttpService:JSONEncode({key = Box.Text}))
+			KeyGui:Destroy()
+		else
+			Btn.Text = "Xác Nhận"
 		end
 	end)
 
-	repeat task.wait() until not gui.Parent
+	repeat task.wait() until KeyGui.Parent == nil
 end
 
 ------------------------------------------------
@@ -82,103 +83,121 @@ end
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.ResetOnSpawn = false
 
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0,520,0,360)
-Main.Position = UDim2.new(0.5,-260,0.5,-180)
-Main.BackgroundColor3 = Color3.fromRGB(255,180,210)
-Main.Active = true
-Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
-
-------------------------------------------------
--- LOGO + RAINBOW BORDER
-------------------------------------------------
-
+-- LOGO
 local Logo = Instance.new("ImageButton", ScreenGui)
 Logo.Size = UDim2.new(0,50,0,50)
 Logo.Position = UDim2.new(0,20,0.45,0)
 Logo.BackgroundColor3 = Color3.fromRGB(255,190,210)
 Logo.Image = "rbxassetid://75319304126321"
 Logo.AutoButtonColor = false
+Logo.Active = true
+Logo.Draggable = true
 Instance.new("UICorner", Logo).CornerRadius = UDim.new(1,0)
 
 local LogoStroke = Instance.new("UIStroke", Logo)
 LogoStroke.Thickness = 2
+LogoStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-local hue = 0
-RunService.RenderStepped:Connect(function(dt)
-	hue = (hue + dt * 0.3) % 1
-	LogoStroke.Color = Color3.fromHSV(hue,1,1)
+-- RAINBOW VIỀN
+task.spawn(function()
+	local t = 0
+	while Logo.Parent do
+		t += 0.02
+		LogoStroke.Color = Color3.fromHSV(t % 1, 1, 1)
+		task.wait(0.03)
+	end
+end)
+
+-- MAIN FRAME
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0,420,0,300)
+Main.Position = UDim2.new(0.5,-210,0.5,-150)
+Main.BackgroundColor3 = Color3.fromRGB(255,170,200)
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
+
+Logo.MouseButton1Click:Connect(function()
+	Main.Visible = not Main.Visible
 end)
 
 ------------------------------------------------
--- TAB UI
-------------------------------------------------
-
-local Menu = Instance.new("Frame", Main)
-Menu.Size = UDim2.new(0,130,1,-20)
-Menu.Position = UDim2.new(0,10,0,10)
-Menu.BackgroundColor3 = Color3.fromRGB(255,160,200)
-Instance.new("UICorner", Menu).CornerRadius = UDim.new(0,14)
-
-local Content = Instance.new("Frame", Main)
-Content.Size = UDim2.new(1,-160,1,-20)
-Content.Position = UDim2.new(0,150,0,10)
-Content.BackgroundColor3 = Color3.fromRGB(255,200,220)
-Instance.new("UICorner", Content).CornerRadius = UDim.new(0,14)
-
-------------------------------------------------
--- TAB LOGIC (OLD STYLE)
+-- TAB SYSTEM (LOGIC CŨ)
 ------------------------------------------------
 
 local Tabs = {}
 local CurrentTab
 
+local TabButtons = Instance.new("Frame", Main)
+TabButtons.Size = UDim2.new(1,-20,0,40)
+TabButtons.Position = UDim2.new(0,10,0,10)
+TabButtons.BackgroundTransparency = 1
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1,-20,1,-70)
+Content.Position = UDim2.new(0,10,0,60)
+Content.BackgroundTransparency = 1
+
 function CreateTab(id, name)
-	local btn = Instance.new("TextButton", Menu)
-	btn.Size = UDim2.new(1,-10,0,32)
-	btn.Position = UDim2.new(0,5,0,(id-1)*36+5)
+	local btn = Instance.new("TextButton", TabButtons)
+	btn.Size = UDim2.new(0,100,1,0)
 	btn.Text = name
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 14
-	btn.BackgroundColor3 = Color3.fromRGB(255,130,180)
-	btn.TextColor3 = Color3.new(1,1,1)
+	btn.BackgroundColor3 = Color3.fromRGB(255,140,180)
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,10)
 
-	local page = Instance.new("Frame", Content)
-	page.Size = UDim2.new(1,0,1,0)
-	page.BackgroundTransparency = 1
-	page.Visible = false
+	local frame = Instance.new("ScrollingFrame", Content)
+	frame.Size = UDim2.new(1,0,1,0)
+	frame.CanvasSize = UDim2.new(0,0,0,0)
+	frame.ScrollBarImageTransparency = 1
+	frame.Visible = false
 
-	local layout = Instance.new("UIListLayout", page)
+	local layout = Instance.new("UIListLayout", frame)
 	layout.Padding = UDim.new(0,6)
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		frame.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+	end)
 
 	btn.MouseButton1Click:Connect(function()
 		ShowTab(id)
 	end)
 
-	Tabs[id] = {Button = btn, Page = page}
+	Tabs[id] = {Button = btn, Frame = frame}
 end
 
 function ShowTab(id)
-	if CurrentTab then
-		CurrentTab.Page.Visible = false
+	for _,t in pairs(Tabs) do
+		t.Frame.Visible = false
 	end
-	CurrentTab = Tabs[id]
-	CurrentTab.Page.Visible = true
+	if Tabs[id] then
+		Tabs[id].Frame.Visible = true
+		CurrentTab = id
+	end
 end
 
-function AddButton(tabId, info)
-	local b = Instance.new("TextButton", Tabs[tabId].Page)
-	b.Size = UDim2.new(1,-10,0,32)
-	b.Text = info.Name or "Button"
-	b.Font = Enum.Font.Gotham
-	b.TextSize = 14
-	b.BackgroundColor3 = Color3.fromRGB(255,140,190)
-	b.TextColor3 = Color3.new(1,1,1)
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0,10)
-	b.MouseButton1Click:Connect(info.Callback or function() end)
+function BuildMenu()
+	-- giữ trống cho đúng logic m
 end
+
+function AddButton(tabId, data)
+	local btn = Instance.new("TextButton", Tabs[tabId].Frame)
+	btn.Size = UDim2.new(1,-10,0,36)
+	btn.Text = data.Name or "Button"
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 14
+	btn.BackgroundColor3 = Color3.fromRGB(255,150,190)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+	btn.MouseButton1Click:Connect(function()
+		if data.Callback then
+			data.Callback()
+		end
+	end)
+end
+
+
 -- Tab + Button
 CreateTab(1, "Linh Tinh")
 ShowTab(1)
