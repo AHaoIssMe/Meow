@@ -1886,10 +1886,3 @@ print("🎯 Point Manager Script Loaded!")
 	end
 })
 
-
-AddButton(1, {
-	Name = "Sóc Lọ!",
-	Callback = function()
-  loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))("Spider Script")
-	end
-})
