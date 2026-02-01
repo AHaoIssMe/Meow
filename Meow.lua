@@ -880,13 +880,47 @@ end)
 AddButton(1, {
 	Name = "Copy Avatar",
 	Callback = function()
-		-- COPY AVATAR PLUGIN WITH GUI
+		-- COPY AVATAR PLUGIN WITH GUI & LOGO
 -- Copy skin người khác (chỉ mình bạn nhìn thấy)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+------------------------------------------------
+-- MAIN UI
+------------------------------------------------
+
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+-- LOGO
+local Logo = Instance.new("ImageButton", ScreenGui)
+Logo.Size = UDim2.new(0,50,0,50)
+Logo.Position = UDim2.new(0,20,0.45,0)
+Logo.BackgroundColor3 = Color3.fromRGB(255,190,210)
+Logo.Image = "rbxassetid://75319304126321"
+Logo.AutoButtonColor = false
+Logo.Active = true
+Logo.Draggable = true
+Logo.BorderSizePixel = 0
+Instance.new("UICorner", Logo).CornerRadius = UDim.new(1,0)
+
+local LogoStroke = Instance.new("UIStroke", Logo)
+LogoStroke.Thickness = 2
+LogoStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+LogoStroke.Color = Color3.fromRGB(255,100,150)
+
+-- RAINBOW VIỀN
+task.spawn(function()
+	local t = 0
+	while Logo.Parent do
+		t += 0.02
+		LogoStroke.Color = Color3.fromHSV(t % 1, 1, 1)
+		task.wait(0.03)
+	end
+end)
 
 -- BIẾN
 local isAvatarOriginal = true
@@ -895,47 +929,60 @@ local currentDesc
 local lastUser
 local addedCon
 local copyHistory = {}
+local MainFrameVisible = false
 
--- TẠO GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CopyAvatarGUI"
-ScreenGui.Parent = game.CoreGui
-ScreenGui.ResetOnSpawn = false
+------------------------------------------------
+-- COPY AVATAR MAIN FRAME
+------------------------------------------------
 
 -- MAIN FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 300, 0, 400)
 MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-MainFrame.BackgroundTransparency = 0.1
+MainFrame.BackgroundColor3 = Color3.fromRGB(255, 170, 200) -- Màu hồng giống logo
+MainFrame.BackgroundTransparency = 0.05
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.Visible = false
 MainFrame.Parent = ScreenGui
 
 -- CORNER
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 10)
+Corner.CornerRadius = UDim.new(0, 18)
 Corner.Parent = MainFrame
 
--- BORDER
+-- NEON BORDER
 local Border = Instance.new("UIStroke")
-Border.Color = Color3.fromRGB(100, 150, 255)
+Border.Color = Color3.fromRGB(255, 100, 150)
 Border.Thickness = 2
+Border.Transparency = 0.3
 Border.Parent = MainFrame
+
+-- GLOW EFFECT
+local Glow = Instance.new("ImageLabel")
+Glow.Size = UDim2.new(1, 40, 1, 40)
+Glow.Position = UDim2.new(0, -20, 0, -20)
+Glow.BackgroundTransparency = 1
+Glow.Image = "rbxassetid://8992230672"
+Glow.ImageColor3 = Color3.fromRGB(255, 100, 150)
+Glow.ImageTransparency = 0.8
+Glow.ScaleType = Enum.ScaleType.Slice
+Glow.SliceCenter = Rect.new(100, 100, 100, 100)
+Glow.Parent = MainFrame
 
 -- TITLE
 local Title = Instance.new("TextLabel")
 Title.Text = "🎭 COPY AVATAR"
 Title.Size = UDim2.new(1, 0, 0, 50)
-Title.BackgroundColor3 = Color3.fromRGB(80, 80, 180)
-Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(255, 140, 180)
+Title.TextColor3 = Color3.fromRGB(255, 20, 147)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
+Title.TextSize = 20
 Title.Parent = MainFrame
 
 -- TITLE CORNER
 local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.CornerRadius = UDim.new(0, 18)
 TitleCorner.Parent = Title
 
 -- PLAYER INPUT
@@ -944,8 +991,8 @@ PlayerLabel.Text = "Nhập tên hoặc ID người chơi:"
 PlayerLabel.Size = UDim2.new(1, -20, 0, 25)
 PlayerLabel.Position = UDim2.new(0, 10, 0, 60)
 PlayerLabel.BackgroundTransparency = 1
-PlayerLabel.TextColor3 = Color3.new(1, 1, 1)
-PlayerLabel.Font = Enum.Font.Gotham
+PlayerLabel.TextColor3 = Color3.fromRGB(255, 20, 147)
+PlayerLabel.Font = Enum.Font.GothamBold
 PlayerLabel.TextSize = 14
 PlayerLabel.TextXAlignment = Enum.TextXAlignment.Left
 PlayerLabel.Parent = MainFrame
@@ -954,8 +1001,8 @@ local PlayerBox = Instance.new("TextBox")
 PlayerBox.PlaceholderText = "Tên hoặc ID người chơi..."
 PlayerBox.Size = UDim2.new(1, -20, 0, 35)
 PlayerBox.Position = UDim2.new(0, 10, 0, 90)
-PlayerBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-PlayerBox.TextColor3 = Color3.new(1, 1, 1)
+PlayerBox.BackgroundColor3 = Color3.fromRGB(255, 200, 220)
+PlayerBox.TextColor3 = Color3.fromRGB(255, 20, 147)
 PlayerBox.Font = Enum.Font.Gotham
 PlayerBox.TextSize = 14
 PlayerBox.Parent = MainFrame
@@ -966,12 +1013,12 @@ BoxCorner.Parent = PlayerBox
 
 -- ONLINE PLAYERS LIST
 local OnlineLabel = Instance.new("TextLabel")
-OnlineLabel.Text = "Người chơi online:"
+OnlineLabel.Text = "👥 Người chơi online:"
 OnlineLabel.Size = UDim2.new(1, -20, 0, 25)
 OnlineLabel.Position = UDim2.new(0, 10, 0, 135)
 OnlineLabel.BackgroundTransparency = 1
-OnlineLabel.TextColor3 = Color3.new(1, 1, 1)
-OnlineLabel.Font = Enum.Font.Gotham
+OnlineLabel.TextColor3 = Color3.fromRGB(255, 20, 147)
+OnlineLabel.Font = Enum.Font.GothamBold
 OnlineLabel.TextSize = 14
 OnlineLabel.TextXAlignment = Enum.TextXAlignment.Left
 OnlineLabel.Parent = MainFrame
@@ -979,7 +1026,7 @@ OnlineLabel.Parent = MainFrame
 local PlayerList = Instance.new("ScrollingFrame")
 PlayerList.Size = UDim2.new(1, -20, 0, 120)
 PlayerList.Position = UDim2.new(0, 10, 0, 165)
-PlayerList.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+PlayerList.BackgroundColor3 = Color3.fromRGB(255, 180, 210)
 PlayerList.ScrollBarThickness = 5
 PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
 PlayerList.Parent = MainFrame
@@ -997,28 +1044,28 @@ local CopyButton = Instance.new("TextButton")
 CopyButton.Text = "📋 COPY AVATAR"
 CopyButton.Size = UDim2.new(1, -20, 0, 40)
 CopyButton.Position = UDim2.new(0, 10, 0, 300)
-CopyButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+CopyButton.BackgroundColor3 = Color3.fromRGB(255, 120, 170)
 CopyButton.TextColor3 = Color3.new(1, 1, 1)
 CopyButton.Font = Enum.Font.GothamBold
 CopyButton.TextSize = 16
 CopyButton.Parent = MainFrame
 
 local CopyCorner = Instance.new("UICorner")
-CopyCorner.CornerRadius = UDim.new(0, 8)
+CopyCorner.CornerRadius = UDim.new(0, 12)
 CopyCorner.Parent = CopyButton
 
 local ResetButton = Instance.new("TextButton")
 ResetButton.Text = "🔄 RESET AVATAR"
 ResetButton.Size = UDim2.new(1, -20, 0, 40)
 ResetButton.Position = UDim2.new(0, 10, 0, 350)
-ResetButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+ResetButton.BackgroundColor3 = Color3.fromRGB(255, 100, 150)
 ResetButton.TextColor3 = Color3.new(1, 1, 1)
 ResetButton.Font = Enum.Font.GothamBold
 ResetButton.TextSize = 16
 ResetButton.Parent = MainFrame
 
 local ResetCorner = Instance.new("UICorner")
-ResetCorner.CornerRadius = UDim.new(0, 8)
+ResetCorner.CornerRadius = UDim.new(0, 12)
 ResetCorner.Parent = ResetButton
 
 -- STATUS LABEL
@@ -1027,30 +1074,44 @@ StatusLabel.Text = "Trạng thái: Sẵn sàng"
 StatusLabel.Size = UDim2.new(1, -20, 0, 20)
 StatusLabel.Position = UDim2.new(0, 10, 1, -30)
 StatusLabel.BackgroundTransparency = 1
-StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+StatusLabel.TextColor3 = Color3.fromRGB(255, 20, 147)
 StatusLabel.Font = Enum.Font.Gotham
 StatusLabel.TextSize = 12
 StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 StatusLabel.Parent = MainFrame
 
+------------------------------------------------
+-- FUNCTIONS
+------------------------------------------------
+
 -- HÀM TẠO THÔNG BÁO
 local function notify(message, color)
     StatusLabel.Text = "Status: " .. message
-    StatusLabel.TextColor3 = color or Color3.fromRGB(0, 255, 150)
+    StatusLabel.TextColor3 = color or Color3.fromRGB(255, 20, 147)
+    
+    -- Hiệu ứng nhấp nháy
+    task.spawn(function()
+        for i = 1, 3 do
+            StatusLabel.TextTransparency = 0.3
+            task.wait(0.1)
+            StatusLabel.TextTransparency = 0
+            task.wait(0.1)
+        end
+    end)
     
     -- Reset sau 3 giây
     task.delay(3, function()
         StatusLabel.Text = "Trạng thái: Sẵn sàng"
-        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 20, 147)
     end)
 end
 
 -- HÀM TẠO NÚT CHO NGƯỜI CHƠI
 local function createPlayerButton(player)
     local btn = Instance.new("TextButton")
-    btn.Text = player.Name .. " (ID: " .. player.UserId .. ")"
+    btn.Text = "👤 " .. player.Name .. " (ID: " .. player.UserId .. ")"
     btn.Size = UDim2.new(1, -10, 0, 30)
-    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 150, 190)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Font = Enum.Font.Gotham
     btn.TextSize = 12
@@ -1058,12 +1119,27 @@ local function createPlayerButton(player)
     btn.Parent = PlayerList
     
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 5)
+    btnCorner.CornerRadius = UDim.new(0, 8)
     btnCorner.Parent = btn
+    
+    -- Hiệu ứng hover
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(255, 130, 170)
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(255, 150, 190)
+    end)
     
     -- Click để chọn người chơi
     btn.MouseButton1Click:Connect(function()
         PlayerBox.Text = player.Name
+        PlayerBox.TextColor3 = Color3.fromRGB(255, 20, 147)
+        
+        -- Hiệu ứng cho button
+        btn.BackgroundColor3 = Color3.fromRGB(255, 100, 150)
+        task.wait(0.2)
+        btn.BackgroundColor3 = Color3.fromRGB(255, 150, 190)
     end)
     
     return btn
@@ -1080,20 +1156,21 @@ local function updatePlayerList()
     
     -- Thêm người chơi hiện tại
     local thisPlayer = Instance.new("TextButton")
-    thisPlayer.Text = "TÔI - " .. LocalPlayer.Name .. " (ID: " .. LocalPlayer.UserId .. ")"
+    thisPlayer.Text = "⭐ TÔI - " .. LocalPlayer.Name .. " (ID: " .. LocalPlayer.UserId .. ")"
     thisPlayer.Size = UDim2.new(1, -10, 0, 30)
-    thisPlayer.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+    thisPlayer.BackgroundColor3 = Color3.fromRGB(255, 100, 150)
     thisPlayer.TextColor3 = Color3.new(1, 1, 1)
     thisPlayer.Font = Enum.Font.GothamBold
     thisPlayer.TextSize = 12
     thisPlayer.Parent = PlayerList
     
     local thisCorner = Instance.new("UICorner")
-    thisCorner.CornerRadius = UDim.new(0, 5)
+    thisCorner.CornerRadius = UDim.new(0, 8)
     thisCorner.Parent = thisPlayer
     
     thisPlayer.MouseButton1Click:Connect(function()
         PlayerBox.Text = LocalPlayer.UserId
+        PlayerBox.TextColor3 = Color3.fromRGB(255, 20, 147)
     end)
     
     -- Thêm người chơi khác
@@ -1128,23 +1205,43 @@ local function setAvatar(char)
             LocalPlayer.CharacterAppearanceLoaded:Wait() 
         end
         
-        -- Lưu avatar hiện tại vào history
-        local currentHumanoid = char:FindFirstChild("Humanoid")
-        if currentHumanoid then
-            local currentAppearance = currentHumanoid:GetAppliedDescription()
-            table.insert(copyHistory, {
-                Time = os.time(),
-                Target = lastUser,
-                Appearance = currentAppearance
-            })
-        end
+        -- Hiệu ứng loading
+        CopyButton.Text = "✨ ĐANG ÁP DỤNG..."
         
         -- Áp dụng avatar mới
         LocalPlayer:ClearCharacterAppearance()
         hum:ApplyDescriptionClientServer(currentDesc)
         isAvatarOriginal = false
         
-        notify("Đã copy avatar thành công!", Color3.fromRGB(0, 255, 150))
+        -- Hiệu ứng thành công
+        CopyButton.Text = "✅ ĐÃ COPY!"
+        task.wait(0.5)
+        CopyButton.Text = "📋 COPY AVATAR"
+        
+        notify("Đã copy avatar thành công!", Color3.fromRGB(255, 20, 147))
+        
+        -- Hiệu ứng particle (ảo)
+        task.spawn(function()
+            for i = 1, 5 do
+                local sparkle = Instance.new("Frame")
+                sparkle.Size = UDim2.new(0, 5, 0, 5)
+                sparkle.Position = UDim2.new(math.random(), 0, math.random(), 0)
+                sparkle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                sparkle.BorderSizePixel = 0
+                sparkle.Parent = MainFrame
+                
+                task.spawn(function()
+                    for j = 1, 10 do
+                        sparkle.BackgroundTransparency = j / 10
+                        sparkle.Size = UDim2.new(0, 5 + j, 0, 5 + j)
+                        task.wait(0.02)
+                    end
+                    sparkle:Destroy()
+                end)
+                
+                task.wait(0.1)
+            end
+        end)
     end
 end
 
@@ -1189,8 +1286,8 @@ local function copyAvatar(target)
     end
     
     -- Hiển thị trạng thái đang load
-    CopyButton.Text = "⏳ ĐANG COPY..."
-    CopyButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+    CopyButton.Text = "⏳ ĐANG TẢI..."
+    CopyButton.BackgroundColor3 = Color3.fromRGB(255, 150, 100)
     
     -- Lấy description
     local success, desc = pcall(function()
@@ -1198,7 +1295,7 @@ local function copyAvatar(target)
     end)
     
     CopyButton.Text = "📋 COPY AVATAR"
-    CopyButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+    CopyButton.BackgroundColor3 = Color3.fromRGB(255, 120, 170)
     
     if success and desc then
         currentDesc = desc
@@ -1233,15 +1330,48 @@ local function resetAvatar()
     local hum = character and character:FindFirstChild("Humanoid")
     
     if hum and originalDesc and not isAvatarOriginal then
+        -- Hiệu ứng loading
+        ResetButton.Text = "✨ ĐANG RESET..."
+        
         LocalPlayer:ClearCharacterAppearance()
         hum:ApplyDescriptionClientServer(originalDesc)
         isAvatarOriginal = true
         
-        notify("Đã reset về avatar gốc!", Color3.fromRGB(0, 255, 150))
+        -- Hiệu ứng thành công
+        ResetButton.Text = "✅ ĐÃ RESET!"
+        task.wait(0.5)
+        ResetButton.Text = "🔄 RESET AVATAR"
+        
+        notify("Đã reset về avatar gốc!", Color3.fromRGB(255, 20, 147))
     else
         notify("Avatar đã là gốc!", Color3.fromRGB(255, 200, 0))
     end
 end
+
+------------------------------------------------
+-- EVENT CONNECTIONS
+------------------------------------------------
+
+-- LOGO CLICK TO TOGGLE MAIN FRAME
+Logo.MouseButton1Click:Connect(function()
+    MainFrameVisible = not MainFrameVisible
+    MainFrame.Visible = MainFrameVisible
+    
+    -- Hiệu ứng cho logo
+    Logo.BackgroundColor3 = MainFrameVisible and Color3.fromRGB(255, 150, 190) or Color3.fromRGB(255, 190, 210)
+    
+    -- Hiệu ứng mở/đóng MainFrame
+    if MainFrameVisible then
+        MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+        MainFrame.Size = UDim2.new(0, 0, 0, 0)
+        
+        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(MainFrame, tweenInfo, {
+            Size = UDim2.new(0, 300, 0, 400)
+        })
+        tween:Play()
+    end
+end)
 
 -- BUTTON EVENTS
 CopyButton.MouseButton1Click:Connect(function()
@@ -1259,6 +1389,23 @@ PlayerBox.FocusLost:Connect(function(enterPressed)
         local target = PlayerBox.Text
         copyAvatar(target)
     end
+end)
+
+-- BUTTON HOVER EFFECTS
+CopyButton.MouseEnter:Connect(function()
+    CopyButton.BackgroundColor3 = Color3.fromRGB(255, 130, 160)
+end)
+
+CopyButton.MouseLeave:Connect(function()
+    CopyButton.BackgroundColor3 = Color3.fromRGB(255, 120, 170)
+end)
+
+ResetButton.MouseEnter:Connect(function()
+    ResetButton.BackgroundColor3 = Color3.fromRGB(255, 80, 130)
+end)
+
+ResetButton.MouseLeave:Connect(function()
+    ResetButton.BackgroundColor3 = Color3.fromRGB(255, 100, 150)
 end)
 
 -- KEYBINDS
@@ -1285,7 +1432,8 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gameProce
     
     -- F1 để toggle GUI
     if input.KeyCode == Enum.KeyCode.F1 then
-        MainFrame.Visible = not MainFrame.Visible
+        MainFrameVisible = not MainFrameVisible
+        MainFrame.Visible = MainFrameVisible
     end
 end)
 
@@ -1293,44 +1441,35 @@ end)
 Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoving:Connect(updatePlayerList)
 
--- KHỞI ĐỘNG
+------------------------------------------------
+-- INITIALIZATION
+------------------------------------------------
+
+-- CẬP NHẬT DANH SÁCH BAN ĐẦU
 task.wait(2)
 updatePlayerList()
-notify("Tool đã sẵn sàng!", Color3.fromRGB(0, 255, 150))
 
-print("🎭 Copy Avatar Plugin Loaded!")
+-- TẠO NOTIFICATION BAN ĐẦU
+notify("Copy Avatar Tool đã sẵn sàng!", Color3.fromRGB(255, 20, 147))
+
+print("🎭 Copy Avatar Plugin with GUI Loaded!")
+print("📌 Click vào Logo để mở GUI")
 print("📌 Ctrl+C: Copy avatar từ ô nhập")
 print("📌 Ctrl+R: Reset avatar")
 print("📌 F1: Ẩn/hiện GUI")
-print("📌 Click vào tên trong danh sách để chọn")
+print("📌 Click vào tên trong danh sách để chọn nhanh")
 
--- EXPORT AS PLUGIN (nếu cần)
-local Plugin = {
-    ["PluginName"] = "Copy Avatar GUI",
-    ["PluginDescription"] = "Copy skin người chơi với GUI đẹp",
-    ["Commands"] = {
-        ["copyavatar"] = {
-            ["ListName"] = "copyavatar [player]",
-            ["Description"] = "Copy avatar của người chơi",
-            ["Aliases"] = {"ca", "char"},
-            ["Function"] = function(args, speaker)
-                if args[1] then
-                    copyAvatar(args[1])
-                end
-            end
-        },
-        ["resetavatar"] = {
-            ["ListName"] = "resetavatar",
-            ["Description"] = "Reset về avatar gốc",
-            ["Aliases"] = {"ra", "unchar"},
-            ["Function"] = function(args, speaker)
-                resetAvatar()
-            end
-        }
-    }
-}
-
--- return Plugin -- Bỏ comment nếu dùng làm plugin
+-- ANIMATE LOGO ON START
+task.spawn(function()
+    for i = 1, 3 do
+        Logo.Rotation = 10
+        task.wait(0.1)
+        Logo.Rotation = -10
+        task.wait(0.1)
+        Logo.Rotation = 0
+        task.wait(0.5)
+    end
+end)
 	end
 })
 
