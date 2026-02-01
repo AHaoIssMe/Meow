@@ -890,3 +890,10 @@ AddButton(1, {
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/AHaoIssMe/Meow/main/Point"))()
 	end
 })
+
+AddButton(1, {
+	Name = "PvP",
+	Callback = function()
+		loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-NO-KEY-Silent-Aim-Skill-Prediction-ESP-Invisible-82165"))()
+	end
+})
