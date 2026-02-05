@@ -1,0 +1,446 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+-- BIẾN
+local isAvatarOriginal = true
+local originalDesc
+local currentDesc
+local lastUser
+local addedCon
+local copyHistory = {}
+
+-- TẠO GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CopyAvatarGUI"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- MAIN FRAME
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- CORNER
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = MainFrame
+
+-- BORDER
+local Border = Instance.new("UIStroke")
+Border.Color = Color3.fromRGB(100, 150, 255)
+Border.Thickness = 2
+Border.Parent = MainFrame
+
+-- TITLE
+local Title = Instance.new("TextLabel")
+Title.Text = "🎭 COPY AVATAR"
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.BackgroundColor3 = Color3.fromRGB(80, 80, 180)
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
+
+-- TITLE CORNER
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = Title
+
+-- PLAYER INPUT
+local PlayerLabel = Instance.new("TextLabel")
+PlayerLabel.Text = "Nhập tên hoặc ID người chơi:"
+PlayerLabel.Size = UDim2.new(1, -20, 0, 25)
+PlayerLabel.Position = UDim2.new(0, 10, 0, 60)
+PlayerLabel.BackgroundTransparency = 1
+PlayerLabel.TextColor3 = Color3.new(1, 1, 1)
+PlayerLabel.Font = Enum.Font.Gotham
+PlayerLabel.TextSize = 14
+PlayerLabel.TextXAlignment = Enum.TextXAlignment.Left
+PlayerLabel.Parent = MainFrame
+
+local PlayerBox = Instance.new("TextBox")
+PlayerBox.PlaceholderText = "Tên hoặc ID người chơi..."
+PlayerBox.Size = UDim2.new(1, -20, 0, 35)
+PlayerBox.Position = UDim2.new(0, 10, 0, 90)
+PlayerBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+PlayerBox.TextColor3 = Color3.new(1, 1, 1)
+PlayerBox.Font = Enum.Font.Gotham
+PlayerBox.TextSize = 14
+PlayerBox.Parent = MainFrame
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 8)
+BoxCorner.Parent = PlayerBox
+
+-- ONLINE PLAYERS LIST
+local OnlineLabel = Instance.new("TextLabel")
+OnlineLabel.Text = "Người chơi online:"
+OnlineLabel.Size = UDim2.new(1, -20, 0, 25)
+OnlineLabel.Position = UDim2.new(0, 10, 0, 135)
+OnlineLabel.BackgroundTransparency = 1
+OnlineLabel.TextColor3 = Color3.new(1, 1, 1)
+OnlineLabel.Font = Enum.Font.Gotham
+OnlineLabel.TextSize = 14
+OnlineLabel.TextXAlignment = Enum.TextXAlignment.Left
+OnlineLabel.Parent = MainFrame
+
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(1, -20, 0, 120)
+PlayerList.Position = UDim2.new(0, 10, 0, 165)
+PlayerList.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+PlayerList.ScrollBarThickness = 5
+PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayerList.Parent = MainFrame
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 3)
+ListLayout.Parent = PlayerList
+
+ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    PlayerList.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y)
+end)
+
+-- BUTTONS
+local CopyButton = Instance.new("TextButton")
+CopyButton.Text = "📋 COPY AVATAR"
+CopyButton.Size = UDim2.new(1, -20, 0, 40)
+CopyButton.Position = UDim2.new(0, 10, 0, 300)
+CopyButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+CopyButton.TextColor3 = Color3.new(1, 1, 1)
+CopyButton.Font = Enum.Font.GothamBold
+CopyButton.TextSize = 16
+CopyButton.Parent = MainFrame
+
+local CopyCorner = Instance.new("UICorner")
+CopyCorner.CornerRadius = UDim.new(0, 8)
+CopyCorner.Parent = CopyButton
+
+local ResetButton = Instance.new("TextButton")
+ResetButton.Text = "🔄 RESET AVATAR"
+ResetButton.Size = UDim2.new(1, -20, 0, 40)
+ResetButton.Position = UDim2.new(0, 10, 0, 350)
+ResetButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+ResetButton.TextColor3 = Color3.new(1, 1, 1)
+ResetButton.Font = Enum.Font.GothamBold
+ResetButton.TextSize = 16
+ResetButton.Parent = MainFrame
+
+local ResetCorner = Instance.new("UICorner")
+ResetCorner.CornerRadius = UDim.new(0, 8)
+ResetCorner.Parent = ResetButton
+
+-- STATUS LABEL
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Text = "Trạng thái: Sẵn sàng"
+StatusLabel.Size = UDim2.new(1, -20, 0, 20)
+StatusLabel.Position = UDim2.new(0, 10, 1, -30)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 12
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = MainFrame
+
+-- HÀM TẠO THÔNG BÁO
+local function notify(message, color)
+    StatusLabel.Text = "Status: " .. message
+    StatusLabel.TextColor3 = color or Color3.fromRGB(0, 255, 150)
+    
+    -- Reset sau 3 giây
+    task.delay(3, function()
+        StatusLabel.Text = "Trạng thái: Sẵn sàng"
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+    end)
+end
+
+-- HÀM TẠO NÚT CHO NGƯỜI CHƠI
+local function createPlayerButton(player)
+    local btn = Instance.new("TextButton")
+    btn.Text = player.Name .. " (ID: " .. player.UserId .. ")"
+    btn.Size = UDim2.new(1, -10, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 12
+    btn.TextWrapped = true
+    btn.Parent = PlayerList
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 5)
+    btnCorner.Parent = btn
+    
+    -- Click để chọn người chơi
+    btn.MouseButton1Click:Connect(function()
+        PlayerBox.Text = player.Name
+    end)
+    
+    return btn
+end
+
+-- CẬP NHẬT DANH SÁCH NGƯỜI CHƠI
+local function updatePlayerList()
+    -- Xóa danh sách cũ
+    for _, child in pairs(PlayerList:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    -- Thêm người chơi hiện tại
+    local thisPlayer = Instance.new("TextButton")
+    thisPlayer.Text = "TÔI - " .. LocalPlayer.Name .. " (ID: " .. LocalPlayer.UserId .. ")"
+    thisPlayer.Size = UDim2.new(1, -10, 0, 30)
+    thisPlayer.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+    thisPlayer.TextColor3 = Color3.new(1, 1, 1)
+    thisPlayer.Font = Enum.Font.GothamBold
+    thisPlayer.TextSize = 12
+    thisPlayer.Parent = PlayerList
+    
+    local thisCorner = Instance.new("UICorner")
+    thisCorner.CornerRadius = UDim.new(0, 5)
+    thisCorner.Parent = thisPlayer
+    
+    thisPlayer.MouseButton1Click:Connect(function()
+        PlayerBox.Text = LocalPlayer.UserId
+    end)
+    
+    -- Thêm người chơi khác
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            createPlayerButton(player)
+        end
+    end
+end
+
+-- HÀM SET AVATAR
+local function setAvatar(char)
+    local hum = char and char:WaitForChild("Humanoid", 3)
+    local hrp = char and char:WaitForChild("HumanoidRootPart", 3)
+    
+    if not hum or not hrp then
+        notify("Không tìm thấy character!", Color3.fromRGB(255, 100, 100))
+        return
+    end
+    
+    if not originalDesc then
+        local success, desc = pcall(function()
+            return hum:GetAppliedDescription()
+        end)
+        if success then
+            originalDesc = desc
+        end
+    end
+    
+    if hum and currentDesc then
+        if LocalPlayer.CanLoadCharacterAppearance and not LocalPlayer:HasAppearanceLoaded() then 
+            LocalPlayer.CharacterAppearanceLoaded:Wait() 
+        end
+        
+        -- Lưu avatar hiện tại vào history
+        local currentHumanoid = char:FindFirstChild("Humanoid")
+        if currentHumanoid then
+            local currentAppearance = currentHumanoid:GetAppliedDescription()
+            table.insert(copyHistory, {
+                Time = os.time(),
+                Target = lastUser,
+                Appearance = currentAppearance
+            })
+        end
+        
+        -- Áp dụng avatar mới
+        LocalPlayer:ClearCharacterAppearance()
+        hum:ApplyDescriptionClientServer(currentDesc)
+        isAvatarOriginal = false
+        
+        notify("Đã copy avatar thành công!", Color3.fromRGB(0, 255, 150))
+    end
+end
+
+-- HÀM COPY AVATAR
+local function copyAvatar(target)
+    if not target then 
+        notify("Vui lòng nhập tên/ID!", Color3.fromRGB(255, 200, 0))
+        return 
+    end
+    
+    if lastUser and lastUser == target then
+        notify("Đã copy người này rồi!", Color3.fromRGB(255, 200, 0))
+        return
+    end
+    
+    lastUser = target
+    
+    local userId = target
+    local playerFound = false
+    
+    -- Tìm player bằng tên
+    for _, player in pairs(Players:GetPlayers()) do
+        if string.lower(player.Name) == string.lower(target) then
+            userId = player.UserId
+            playerFound = true
+            break
+        end
+    end
+    
+    -- Nếu không tìm thấy, thử lấy UserId từ tên
+    if not playerFound then
+        if not tonumber(userId) then
+            local success, id = pcall(function()
+                return Players:GetUserIdFromNameAsync(userId)
+            end)
+            
+            if success and id then 
+                userId = id
+                playerFound = true
+            end
+        end
+    end
+    
+    -- Hiển thị trạng thái đang load
+    CopyButton.Text = "⏳ ĐANG COPY..."
+    CopyButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+    
+    -- Lấy description
+    local success, desc = pcall(function()
+        return Players:GetHumanoidDescriptionFromUserId(userId)
+    end)
+    
+    CopyButton.Text = "📋 COPY AVATAR"
+    CopyButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+    
+    if success and desc then
+        currentDesc = desc
+        
+        -- Áp dụng cho character hiện tại
+        local character = LocalPlayer.Character
+        if character then
+            setAvatar(character)
+        end
+        
+        -- Kết nối khi respawn
+        if addedCon then 
+            addedCon:Disconnect() 
+        end
+        addedCon = LocalPlayer.CharacterAdded:Connect(setAvatar)
+        
+    else
+        notify("Không tìm thấy người chơi!", Color3.fromRGB(255, 100, 100))
+    end
+end
+
+-- HÀM RESET AVATAR
+local function resetAvatar()
+    if addedCon then
+        addedCon:Disconnect()
+        addedCon = nil
+        currentDesc = nil
+        lastUser = nil
+    end
+    
+    local character = LocalPlayer.Character
+    local hum = character and character:FindFirstChild("Humanoid")
+    
+    if hum and originalDesc and not isAvatarOriginal then
+        LocalPlayer:ClearCharacterAppearance()
+        hum:ApplyDescriptionClientServer(originalDesc)
+        isAvatarOriginal = true
+        
+        notify("Đã reset về avatar gốc!", Color3.fromRGB(0, 255, 150))
+    else
+        notify("Avatar đã là gốc!", Color3.fromRGB(255, 200, 0))
+    end
+end
+
+-- BUTTON EVENTS
+CopyButton.MouseButton1Click:Connect(function()
+    local target = PlayerBox.Text
+    copyAvatar(target)
+end)
+
+ResetButton.MouseButton1Click:Connect(function()
+    resetAvatar()
+end)
+
+-- ENTER KEY TO COPY
+PlayerBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local target = PlayerBox.Text
+        copyAvatar(target)
+    end
+end)
+
+-- KEYBINDS
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    -- Ctrl+C để copy
+    if input.KeyCode == Enum.KeyCode.C and input.UserInputType == Enum.UserInputType.Keyboard then
+        local ctrl = game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) or 
+                     game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.RightControl)
+        if ctrl then
+            copyAvatar(PlayerBox.Text)
+        end
+    end
+    
+    -- Ctrl+R để reset
+    if input.KeyCode == Enum.KeyCode.R and input.UserInputType == Enum.UserInputType.Keyboard then
+        local ctrl = game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) or 
+                     game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.RightControl)
+        if ctrl then
+            resetAvatar()
+        end
+    end
+    
+    -- F1 để toggle GUI
+    if input.KeyCode == Enum.KeyCode.F1 then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+-- AUTO-UPDATE PLAYER LIST
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+
+-- KHỞI ĐỘNG
+task.wait(2)
+updatePlayerList()
+notify("Tool đã sẵn sàng!", Color3.fromRGB(0, 255, 150))
+
+print("🎭 Copy Avatar Plugin Loaded!")
+print("📌 Ctrl+C: Copy avatar từ ô nhập")
+print("📌 Ctrl+R: Reset avatar")
+print("📌 F1: Ẩn/hiện GUI")
+print("📌 Click vào tên trong danh sách để chọn")
+
+-- EXPORT AS PLUGIN (nếu cần)
+local Plugin = {
+    ["PluginName"] = "Copy Avatar GUI",
+    ["PluginDescription"] = "Copy skin người chơi với GUI đẹp",
+    ["Commands"] = {
+        ["copyavatar"] = {
+            ["ListName"] = "copyavatar [player]",
+            ["Description"] = "Copy avatar của người chơi",
+            ["Aliases"] = {"ca", "char"},
+            ["Function"] = function(args, speaker)
+                if args[1] then
+                    copyAvatar(args[1])
+                end
+            end
+        },
+        ["resetavatar"] = {
+            ["ListName"] = "resetavatar",
+            ["Description"] = "Reset về avatar gốc",
+            ["Aliases"] = {"ra", "unchar"},
+            ["Function"] = function(args, speaker)
+                resetAvatar()
+            end
+        }
+    }
+}
