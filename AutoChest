@@ -1,0 +1,82 @@
+getgenv().AutoChestEnabled = state
+        
+        if state then
+            -- BẬT: Chạy logic Auto Chest trong một vòng lặp có kiểm soát
+            task.spawn(function()
+                -- Các biến và hàm cần thiết (đưa vào trong để tránh xung đột)
+                local MaxSpeed = 200
+                local LocalPlayer = game:GetService("Players").LocalPlayer
+                local Locations = workspace._WorldOrigin.Locations
+
+                local function getCharacter()
+                    if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
+                    LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+                    return LocalPlayer.Character
+                end
+
+                local function DistanceFromPlrSort(ObjectList)
+                    local RootPart = getCharacter().LowerTorso
+                    table.sort(ObjectList, function(ChestA, ChestB)
+                        local RootPos = RootPart.Position
+                        local DistanceA = (RootPos - ChestA.Position).Magnitude
+                        local DistanceB = (RootPos - ChestB.Position).Magnitude
+                        return DistanceA < DistanceB
+                    end)
+                end
+
+                local UncheckedChests = {}
+                local FirstRun = true
+
+                local function getChestsSorted()
+                    if FirstRun then
+                        FirstRun = false
+                        for _, Object in pairs(game:GetDescendants()) do
+                            if Object.Name:find("Chest") and Object.ClassName == "Part" then
+                                table.insert(UncheckedChests, Object)
+                            end
+                        end
+                    end
+                    local Chests = {}
+                    for _, Chest in pairs(UncheckedChests) do
+                        if Chest:FindFirstChild("TouchInterest") then
+                            table.insert(Chests, Chest)
+                        end
+                    end
+                    DistanceFromPlrSort(Chests)
+                    return Chests
+                end
+
+                local function toggleNoclip(Toggle)
+                    for _, v in pairs(getCharacter():GetChildren()) do
+                        if v.ClassName == "Part" then v.CanCollide = not Toggle end
+                    end
+                end
+
+                local function Teleport(Goal, Speed)
+                    Speed = Speed or MaxSpeed
+                    toggleNoclip(true)
+                    local RootPart = getCharacter().HumanoidRootPart
+                    local Magnitude = (RootPart.Position - Goal.Position).Magnitude
+
+                    while not (Magnitude < 1) and getgenv().AutoChestEnabled do -- KIỂM TRA BIẾN Ở ĐÂY
+                        local Direction = (Goal.Position - RootPart.Position).unit
+                        RootPart.CFrame = RootPart.CFrame + Direction * (Speed * task.wait())
+                        Magnitude = (RootPart.Position - Goal.Position).Magnitude
+                    end
+                    toggleNoclip(false)
+                end
+
+                -- Vòng lặp chính (cũng kiểm tra biến)
+                while getgenv().AutoChestEnabled do
+                    task.wait()
+                    local Chests = getChestsSorted()
+                    if #Chests > 0 then
+                        Teleport(Chests[1].CFrame)
+                    end
+                end
+            end)
+            
+        else
+            -- TẮT: Chỉ cần tắt biến, vòng lặp while sẽ tự động kết thúc
+            print("Auto Chest ĐÃ TẮT")
+        end
