@@ -1,0 +1,287 @@
+------------------------------------------------
+-- MAIN UI
+------------------------------------------------
+
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.ResetOnSpawn = false
+
+getgenv().AutoJumpEnabled = false
+local autoJumpConnection = nil
+getgenv().AutoChestEnabled = false
+
+------------------------------------------------
+-- LOGO
+------------------------------------------------
+local Logo = Instance.new("ImageButton", ScreenGui)
+Logo.Size = UDim2.new(0,45,0,45)  -- Cạnh 45
+Logo.Position = UDim2.new(0,20,0.45,0)
+Logo.BackgroundColor3 = Color3.fromRGB(255,190,210)
+Logo.Image = "rbxassetid://139745581069080"
+Logo.AutoButtonColor = false
+Logo.Active = true
+Logo.Draggable = true
+Logo.BorderSizePixel = 0
+
+-- BO GÓC (góc bo tròn 8 pixel)
+local LogoCorner = Instance.new("UICorner", Logo)
+LogoCorner.CornerRadius = UDim.new(0, 8)
+
+-- VIỀN
+local LogoStroke = Instance.new("UIStroke", Logo)
+LogoStroke.Thickness = 2
+LogoStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+LogoStroke.Color = Color3.fromRGB(255,100,150)
+
+-- RAINBOW VIỀN
+task.spawn(function()
+        local t = 0
+        while Logo.Parent do
+                t += 0.02
+                LogoStroke.Color = Color3.fromHSV(t % 1, 1, 1)
+                task.wait(0.03)
+        end
+end)
+
+------------------------------------------------
+-- MAIN FRAME (XÁM ĐEN + VIỀN ĐEN)
+------------------------------------------------
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0,420,0,300)
+Main.Position = UDim2.new(0.5,-210,0.5,-150)
+Main.BackgroundColor3 = Color3.fromRGB(40, 40, 45)  -- Xám đen
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+Main.BorderSizePixel = 0
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
+
+-- Viền đen
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Thickness = 2
+MainStroke.Color = Color3.fromRGB(0, 0, 0)  -- Viền đen tuyền
+
+Logo.MouseButton1Click:Connect(function()
+        Main.Visible = not Main.Visible
+end)
+
+------------------------------------------------
+-- TITLE (HEADER)
+------------------------------------------------
+
+local TitleFrame = Instance.new("Frame", Main)
+TitleFrame.Size = UDim2.new(1, 0, 0, 40)
+TitleFrame.Position = UDim2.new(0, 0, 0, 10)
+TitleFrame.BackgroundTransparency = 1
+TitleFrame.BorderSizePixel = 0
+
+local Title = Instance.new("TextLabel", TitleFrame)
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🗿 Meow Hub 🚀"
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 25
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Chữ trắng cho nền tối
+Title.TextStrokeTransparency = 0.7
+Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+
+------------------------------------------------
+-- TAB SYSTEM (TAB MÀU ĐEN VỪA)
+------------------------------------------------
+
+local Tabs = {}
+local CurrentTab
+
+local TabButtons = Instance.new("Frame", Main)
+TabButtons.Size = UDim2.new(1,-20,0,40)
+TabButtons.Position = UDim2.new(0,10,0,60)  -- Dịch xuống để chừa chỗ cho title
+TabButtons.BackgroundTransparency = 1
+TabButtons.BorderSizePixel = 0
+
+-- Layout ngang cho tab buttons
+local TabLayout = Instance.new("UIListLayout", TabButtons)
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.Padding = UDim.new(0, 5)
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1,-20,1,-110)  -- Điều chỉnh kích thước
+Content.Position = UDim2.new(0,10,0,110)  -- Điều chỉnh vị trí
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+
+function CreateTab(tabId, name)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0,80,0,30)
+        btn.Text = name
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 13
+        btn.TextColor3 = Color3.fromRGB(220, 220, 220)  -- Chữ trắng xám
+        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)  -- Đen vừa
+        btn.BorderSizePixel = 0
+        btn.Parent = TabButtons
+
+        -- Hiệu ứng hover
+        btn.MouseEnter:Connect(function()
+                btn.BackgroundColor3 = Color3.fromRGB(80, 80, 85)
+        end)
+
+        btn.MouseLeave:Connect(function()
+                if CurrentTab == tabId then
+                        btn.BackgroundColor3 = Color3.fromRGB(100, 100, 105)  -- Tab đang chọn
+                else
+                        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)  -- Tab bình thường
+                end
+        end)
+
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+        local frame = Instance.new("ScrollingFrame", Content)
+        frame.Size = UDim2.new(1,0,1,0)
+        frame.CanvasSize = UDim2.new(0,0,0,0)
+        frame.ScrollBarImageTransparency = 1
+        frame.ScrollingDirection = Enum.ScrollingDirection.Y
+        frame.Visible = false
+        frame.BorderSizePixel = 0
+        frame.BackgroundTransparency = 1
+
+        local layout = Instance.new("UIListLayout", frame)
+        layout.Padding = UDim.new(0,6)
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                frame.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+        end)
+
+        btn.MouseButton1Click:Connect(function()
+                ShowTab(tabId)
+        end)
+
+        Tabs[tabId] = {Button = btn, Frame = frame}
+end
+
+function ShowTab(tabId)
+        for id, t in pairs(Tabs) do
+                t.Frame.Visible = false
+                if id == tabId then
+                        t.Button.BackgroundColor3 = Color3.fromRGB(100, 100, 105)  -- Tab đang chọn
+                else
+                        t.Button.BackgroundColor3 = Color3.fromRGB(60, 60, 65)  -- Tab bình thường
+                end
+        end
+        if Tabs[tabId] then
+                Tabs[tabId].Frame.Visible = true
+                CurrentTab = tabId
+        end
+end
+
+function AddButton(tabId, data)
+        if not Tabs[tabId] then 
+                warn("Tab " .. tabId .. " không tồn tại!")
+                return 
+        end
+        ------------------------------------------------
+-- NÚT TOGGLE TRẮNG ĐEN
+------------------------------------------------
+
+function AddToggle(tabId, data)
+    if not Tabs[tabId] then 
+        warn("Tab " .. tabId .. " không tồn tại!")
+        return 
+    end
+
+    -- Frame chứa toggle
+    local frame = Instance.new("Frame", Tabs[tabId].Frame)
+    frame.Size = UDim2.new(1, -10, 0, 45)
+    frame.BackgroundTransparency = 1
+    frame.BorderSizePixel = 0
+
+    -- Tên tính năng
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = data.Name or "Toggle"
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 16
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Nút toggle
+    local toggleBtn = Instance.new("TextButton", frame)
+    toggleBtn.Size = UDim2.new(0, 50, 0, 24)
+    toggleBtn.Position = UDim2.new(0.8, -25, 0.5, -12)
+    toggleBtn.Text = ""
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)  -- 🤍 OFF: trắng xám
+    toggleBtn.BorderSizePixel = 0
+    Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+
+    -- Nút tròn
+    local knob = Instance.new("Frame", toggleBtn)
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = UDim2.new(0, 3, 0.5, -9)
+    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  -- Trắng
+    knob.BorderSizePixel = 0
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    -- Trạng thái
+    local isOn = false
+
+    -- Cập nhật giao diện
+    local function updateToggle()
+        if isOn then
+            -- ON: 🖤 đen
+            knob:TweenPosition(UDim2.new(0, 29, 0.5, -9), "Out", "Quad", 0.1, true)
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Đen
+            knob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)    -- Xám nhạt
+        else
+            -- OFF: 🤍 trắng
+            knob:TweenPosition(UDim2.new(0, 3, 0.5, -9), "Out", "Quad", 0.1, true)
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)  -- Trắng xám
+            knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)      -- Trắng
+        end
+    end
+
+    -- Click để toggle
+    toggleBtn.MouseButton1Click:Connect(function()
+        isOn = not isOn
+        updateToggle()
+        if data.Callback then
+            data.Callback(isOn)
+        end
+    end)
+
+    return frame
+end 
+
+        local btn = Instance.new("TextButton", Tabs[tabId].Frame)
+        btn.Size = UDim2.new(1,0,0,36)
+        btn.Text = data.Name or "Button"
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 14
+        btn.TextColor3 = Color3.fromRGB(220, 220, 220)  -- Chữ trắng xám
+        btn.BackgroundColor3 = Color3.fromRGB(70, 70, 75)  -- Nút màu xám đậm
+        btn.BorderSizePixel = 0
+        btn.AutoButtonColor = true
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+        -- Hiệu ứng hover
+        btn.MouseEnter:Connect(function()
+                btn.BackgroundColor3 = Color3.fromRGB(90, 90, 95)
+        end)
+
+        btn.MouseLeave:Connect(function()
+                btn.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+        end)
+
+        btn.MouseButton1Click:Connect(function()
+                if data.Callback then
+                        data.Callback()
+                end
+        end)
+
+        return btn
+end
+
+function BuildMenu()
+        -- Giữ trống
+end
