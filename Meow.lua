@@ -819,7 +819,7 @@ AddToggle(4, {
                             remote:InvokeServer(
                                 "AttemptWeaponHit",
                                 {
-                                    damage = 10000000000000,
+                                    damage = 999999999,
                                     attackCooldown = 0.025,
                                     cycleIndex = 4,
                                     tool = tool,
@@ -830,7 +830,7 @@ AddToggle(4, {
                         end
                     end
                     
-                    task.wait(0.00000001)
+                    task.wait(0.01)
                 end
             end)
             
