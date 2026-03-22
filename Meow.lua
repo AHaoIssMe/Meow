@@ -633,7 +633,26 @@ AddButton(1, {
 	end
 })
 
+AddButton(1, {
+    Name = "Fake Lag",
+    Callback = function(state)
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/AHaoIssMe/Meow/main/FakeLag"))()
+    end
+})
 
+AddButton(2, {
+    Name = "PvP",
+    Callback = function(state)
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-NO-KEY-Silent-Aim-Skill-Prediction-ESP-Invisible-82165"))()    
+    end
+})
+
+AddButton(2, {
+    Name = "Gravity Hub",
+    Callback = function(state)
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/Main.lua"))()
+    end
+})
 
 AddToggle(2, {
     Name = "Auto Chest (Nhặt Rương)",
@@ -819,7 +838,7 @@ AddToggle(4, {
                             remote:InvokeServer(
                                 "AttemptWeaponHit",
                                 {
-                                    damage = 999999999,
+                                    damage = 99999999999999999999999999999999,
                                     attackCooldown = 0.025,
                                     cycleIndex = 4,
                                     tool = tool,
@@ -830,7 +849,7 @@ AddToggle(4, {
                         end
                     end
                     
-                    task.wait(0.01)
+                    task.wait(0.0000000000000000000001)
                 end
             end)
             
