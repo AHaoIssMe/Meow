@@ -1,0 +1,276 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+
+-- BIẾN TOÀN CỤC
+getgenv().FrozenPlayers = getgenv().FrozenPlayers or {}
+
+------------------------------------------------
+-- HÀM FREEZE/UNFREEZE
+------------------------------------------------
+
+local function freezePlayer(targetPlayer)
+    local player = Players:FindFirstChild(targetPlayer) or Players:FindFirstChild(tostring(targetPlayer))
+    if not player then return false end
+    
+    local char = player.Character
+    if not char then return false end
+    
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and not part.Anchored then
+            part.Anchored = true
+        end
+    end
+    
+    getgenv().FrozenPlayers[player.Name] = true
+    return true
+end
+
+local function unfreezePlayer(targetPlayer)
+    local player = Players:FindFirstChild(targetPlayer) or Players:FindFirstChild(tostring(targetPlayer))
+    if not player then return false end
+    
+    local char = player.Character
+    if not char then return false end
+    
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Anchored then
+            part.Anchored = false
+        end
+    end
+    
+    getgenv().FrozenPlayers[player.Name] = nil
+    return true
+end
+
+------------------------------------------------
+-- TẠO GUI
+------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "FreezeGUI"
+ScreenGui.ResetOnSpawn = false
+
+-- MAIN FRAME
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 300, 0, 250)
+Main.Position = UDim2.new(0.5, -175, 0.5, -140)
+Main.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+Main.BackgroundTransparency = 0.1
+Main.Active = true
+Main.Draggable = true
+Main.BorderSizePixel = 0
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+-- VIỀN
+local Stroke = Instance.new("UIStroke", Main)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(0, 150, 255)
+
+-- TITLE
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+Title.Text = "❄️ FREEZE TOOL ❄️"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 12)
+
+-- Ô NHẬP TÊN
+local SearchBox = Instance.new("TextBox", Main)
+SearchBox.Size = UDim2.new(0.9, 0, 0, 35)
+SearchBox.Position = UDim2.new(0.05, 0, 0.15, 0)
+SearchBox.PlaceholderText = "Nhập tên người chơi..."
+SearchBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.Font = Enum.Font.Gotham
+SearchBox.TextSize = 14
+SearchBox.BorderSizePixel = 0
+Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 8)
+
+-- NÚT FREEZE
+local FreezeBtn = Instance.new("TextButton", Main)
+FreezeBtn.Size = UDim2.new(0.4, -5, 0, 35)
+FreezeBtn.Position = UDim2.new(0.05, 0, 0.27, 0)
+FreezeBtn.Text = "❄️ Fake Lag"
+FreezeBtn.Font = Enum.Font.GothamBold
+FreezeBtn.TextSize = 14
+FreezeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+FreezeBtn.BorderSizePixel = 0
+Instance.new("UICorner", FreezeBtn).CornerRadius = UDim.new(0, 8)
+
+-- NÚT UNFREEZE
+local UnfreezeBtn = Instance.new("TextButton", Main)
+UnfreezeBtn.Size = UDim2.new(0.4, -5, 0, 35)
+UnfreezeBtn.Position = UDim2.new(0.55, 0, 0.27, 0)
+UnfreezeBtn.Text = "🔥 Dừng Fake Lag"
+UnfreezeBtn.Font = Enum.Font.GothamBold
+UnfreezeBtn.TextSize = 14
+UnfreezeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+UnfreezeBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+UnfreezeBtn.BorderSizePixel = 0
+Instance.new("UICorner", UnfreezeBtn).CornerRadius = UDim.new(0, 8)
+
+-- DANH SÁCH NGƯỜI CHƠI
+local PlayerListLabel = Instance.new("TextLabel", Main)
+PlayerListLabel.Size = UDim2.new(0.9, 0, 0, 20)
+PlayerListLabel.Position = UDim2.new(0.05, 0, 0.37, 0)
+PlayerListLabel.BackgroundTransparency = 1
+PlayerListLabel.Text = "👥 DANH SÁCH NGƯỜI CHƠI:"
+PlayerListLabel.Font = Enum.Font.GothamBold
+PlayerListLabel.TextSize = 12
+PlayerListLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+PlayerListLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local PlayerList = Instance.new("ScrollingFrame", Main)
+PlayerList.Size = UDim2.new(0.9, 0, 0, 120)
+PlayerList.Position = UDim2.new(0.05, 0, 0.42, 0)
+PlayerList.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+PlayerList.BorderSizePixel = 0
+PlayerList.ScrollBarThickness = 5
+Instance.new("UICorner", PlayerList).CornerRadius = UDim.new(0, 8)
+
+local PlayerLayout = Instance.new("UIListLayout", PlayerList)
+PlayerLayout.Padding = UDim.new(0, 2)
+PlayerLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    PlayerList.CanvasSize = UDim2.new(0, 0, 0, PlayerLayout.AbsoluteContentSize.Y + 5)
+end)
+
+-- TRẠNG THÁI
+local StatusLabel = Instance.new("TextLabel", Main)
+StatusLabel.Size = UDim2.new(1, 0, 0, 25)
+StatusLabel.Position = UDim2.new(0, 0, 1, -30)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Sẵn sàng"
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 12
+StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+
+-- HÀM TẠO NÚT NGƯỜI CHƠI
+local function createPlayerButton(player)
+    local btn = Instance.new("TextButton", PlayerList)
+    btn.Size = UDim2.new(1, -5, 0, 25)
+    btn.BackgroundColor3 = player == LocalPlayer and Color3.fromRGB(80, 80, 100) or Color3.fromRGB(60, 60, 80)
+    btn.BorderSizePixel = 0
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    
+    local nameLabel = Instance.new("TextLabel", btn)
+    nameLabel.Size = UDim2.new(0.7, 0, 1, 0)
+    nameLabel.Position = UDim2.new(0, 5, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.Font = Enum.Font.Gotham
+    nameLabel.TextSize = 12
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local status = Instance.new("TextLabel", btn)
+    status.Size = UDim2.new(0.2, 0, 1, 0)
+    status.Position = UDim2.new(0.8, 0, 0, 0)
+    status.BackgroundTransparency = 1
+    status.Text = getgenv().FrozenPlayers[player.Name] and "❄️" or ""
+    status.Font = Enum.Font.Gotham
+    status.TextSize = 14
+    status.TextColor3 = Color3.fromRGB(0, 200, 255)
+    
+    btn.MouseButton1Click:Connect(function()
+        SearchBox.Text = player.Name
+    end)
+    
+    return btn
+end
+
+-- CẬP NHẬT DANH SÁCH
+local function updatePlayerList()
+    for _, child in pairs(PlayerList:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        createPlayerButton(player)
+    end
+end
+
+-- HOVER EFFECTS
+FreezeBtn.MouseEnter:Connect(function()
+    TweenService:Create(FreezeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 150, 255)}):Play()
+end)
+FreezeBtn.MouseLeave:Connect(function()
+    TweenService:Create(FreezeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 120, 255)}):Play()
+end)
+
+UnfreezeBtn.MouseEnter:Connect(function()
+    TweenService:Create(UnfreezeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 100, 100)}):Play()
+end)
+UnfreezeBtn.MouseLeave:Connect(function()
+    TweenService:Create(UnfreezeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 80, 80)}):Play()
+end)
+
+-- BUTTON CLICK EVENTS
+FreezeBtn.MouseButton1Click:Connect(function()
+    local target = SearchBox.Text
+    if target == "" then
+        StatusLabel.Text = "⚠️ Nhập tên người chơi!"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+        return
+    end
+    
+    local success = freezePlayer(target)
+    if success then
+        StatusLabel.Text = "✅ Đã ngưng " .. target
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        updatePlayerList()
+    else
+        StatusLabel.Text = "❌ Không tìm thấy " .. target
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end)
+
+UnfreezeBtn.MouseButton1Click:Connect(function()
+    local target = SearchBox.Text
+    if target == "" then
+        StatusLabel.Text = "⚠️ Nhập tên người chơi!"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+        return
+    end
+    
+    local success = unfreezePlayer(target)
+    if success then
+        StatusLabel.Text = "✅ Đã  ngưng fake lag " .. target
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        updatePlayerList()
+    else
+        StatusLabel.Text = "❌ Không tìm thấy " .. target
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end)
+
+-- ENTER KEY
+SearchBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local target = SearchBox.Text
+        if target ~= "" then
+            local success = freezePlayer(target)
+            if success then
+                StatusLabel.Text = "✅ Đã ngưng " .. target
+                StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                updatePlayerList()
+            end
+        end
+    end
+end)
+
+-- CẬP NHẬT DANH SÁCH
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+
+-- KHỞI TẠO
+task.wait(1)
+updatePlayerList()
+
+print("❄️  Tool Loaded!")
+print("📌 Click vào tên để nhập")
+print("📌 Nhấn nút Freeze/Unfreeze")
