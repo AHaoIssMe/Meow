@@ -8,6 +8,7 @@ ScreenGui.ResetOnSpawn = false
 getgenv().AutoJumpEnabled = false
 local autoJumpConnection = nil
 getgenv().AutoChestEnabled = false
+getgenv().AutoEggEnabled = false
 
 ------------------------------------------------
 -- LOGO
