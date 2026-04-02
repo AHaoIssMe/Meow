@@ -749,6 +749,8 @@ pcall(function()
     SendHit=getsenv(p.PlayerScripts:WaitForChildOfClass("LocalScript"))._G.SendHitsToServer
 end)
 
+local R=999
+local Parts={"Head","HumanoidRootPart","LeftHand","RightHand","LeftLowerArm","RightLowerArm"}
 
 local function ngu(v)
     local h=v:FindFirstChild("Humanoid")
@@ -756,7 +758,7 @@ local function ngu(v)
     return h and r and h.Health>0
 end
 
-local function ahao()
+local function trieu()
     local t,c={},p.Character
     if not c then return t end
     local hrp=c.HumanoidRootPart
@@ -783,7 +785,7 @@ task.spawn(function()
         local c=p.Character
         if not c then continue end
         
-        local tg=ahao()
+        local tg=trieu()
         if #tg==0 then continue end
         
         local a={nil,{}}
@@ -817,9 +819,10 @@ end
 apply()
 
 p.CharacterAdded:Connect(function()
-	task.wait(0.0001)
+	task.wait(1)
 	apply()
 end)
+-- trieu
     end
 })
 
