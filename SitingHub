@@ -12,6 +12,65 @@ CreateTab(4, "Client Assasin")
 ShowTab(1,2,3,4)
 BuildMenu()
 
+
+
+
+
+
+
+
+
+AddToggle(2, {
+    Name = "Instant Prompts (Bỏ qua nút F)",
+    Callback = function(state)
+        local ProximityPromptService = game:GetService("ProximityPromptService")
+        local Prompts = {}
+        local ppsLoop1 = nil
+        local ppsLoop2 = nil
+        
+        if state then
+            -- BẬT INSTANT PROMPTS
+            ppsLoop1 = ProximityPromptService.PromptShown:Connect(function(prompt)
+                if Prompts[prompt] then return end
+                Prompts[prompt] = prompt.HoldDuration
+                prompt.HoldDuration = 0
+            end)
+            
+            ppsLoop2 = ProximityPromptService.PromptHidden:Connect(function(prompt)
+                if not Prompts[prompt] then return end
+                prompt.HoldDuration = Prompts[prompt]
+                Prompts[prompt] = nil
+            end)
+            
+            -- LƯU LẠI ĐỂ TẮT SAU
+            getgenv()._instantPromptsLoop1 = ppsLoop1
+            getgenv()._instantPromptsLoop2 = ppsLoop2
+            
+            print("✅ Instant Prompts: BẬT")
+        else
+            -- TẮT INSTANT PROMPTS
+            if getgenv()._instantPromptsLoop1 then
+                getgenv()._instantPromptsLoop1:Disconnect()
+                getgenv()._instantPromptsLoop1 = nil
+            end
+            if getgenv()._instantPromptsLoop2 then
+                getgenv()._instantPromptsLoop2:Disconnect()
+                getgenv()._instantPromptsLoop2 = nil
+            end
+            
+            -- KHÔI PHỤC TẤT CẢ PROMPT CÒN SÓT
+            for prompt, originalDuration in pairs(Prompts) do
+                if prompt then
+                    prompt.HoldDuration = originalDuration
+                end
+            end
+            table.clear(Prompts)
+            
+            print("❌ Instant Prompts: TẮT")
+        end
+    end
+})
+
 AddButton(1, {
         Name = "Teleport Tool",
         Callback = function()
