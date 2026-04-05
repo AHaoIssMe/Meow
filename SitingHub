@@ -20,7 +20,7 @@ BuildMenu()
 
 
 
-AddToggle(2, {
+AddToggle(1, {
     Name = "Instant Prompts (Bỏ qua nút F)",
     Callback = function(state)
         local ProximityPromptService = game:GetService("ProximityPromptService")
