@@ -1,0 +1,269 @@
+-- SCRIPT LAG CỰC ĐỘ - DÙNG CẨN THẬN
+-- TẠO LAG NẶNG CHO NGƯỜI CHẠY SCRIPT
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+
+local lp = Players.LocalPlayer
+
+------------------------------------------------
+-- TẠO NÚT BẬT LAG
+------------------------------------------------
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "LagMachine"
+gui.ResetOnSpawn = false
+
+local btn = Instance.new("TextButton", gui)
+btn.Size = UDim2.new(0, 150, 0, 50)
+btn.Position = UDim2.new(0.5, -75, 0.5, -25)
+btn.Text = "🔥 BẬT LAG 🔥"
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 16
+btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+
+local status = Instance.new("TextLabel", gui)
+status.Size = UDim2.new(0, 200, 0, 30)
+status.Position = UDim2.new(0.5, -100, 0.5, 40)
+status.BackgroundTransparency = 1
+status.Text = "⚪ ĐANG TẮT"
+status.Font = Enum.Font.GothamBold
+status.TextSize = 14
+status.TextColor3 = Color3.fromRGB(150, 150, 150)
+
+------------------------------------------------
+-- CÁC HÀM GÂY LAG
+------------------------------------------------
+local lagEnabled = false
+local threads = {}
+
+-- 1. VÔ SỐ VÒNG LẶP VÔ HẠN
+local function loopHell()
+    while lagEnabled do
+        local a = 0
+        for i = 1, 1000000 do
+            a = a + i * math.random() / math.pi
+            local b = math.sin(a) * math.cos(a) * math.tan(a)
+            local c = math.sqrt(math.abs(b)) ^ 1.234
+        end
+        task.wait()
+    end
+end
+
+-- 2. TẠO HÀNG NGHÌN PART RỒI XÓA
+local function partSpam()
+    while lagEnabled do
+        for i = 1, 500 do
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(1, 1, 1)
+            part.Position = Vector3.new(math.random(-1000, 1000), math.random(-100, 500), math.random(-1000, 1000))
+            part.Anchored = true
+            part.Transparency = 1
+            part.CanCollide = false
+            part.Parent = Workspace
+            task.spawn(function()
+                task.wait(0.5)
+                part:Destroy()
+            end)
+        end
+        task.wait()
+    end
+end
+
+-- 3. GỬI REMOTE ẢO LIÊN TỤC
+local function remoteSpam()
+    local remotes = {}
+    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+            table.insert(remotes, v)
+        end
+    end
+    
+    while lagEnabled do
+        for _, remote in pairs(remotes) do
+            pcall(function()
+                if remote:IsA("RemoteEvent") then
+                    remote:FireServer("lag_spam_" .. math.random())
+                elseif remote:IsA("RemoteFunction") then
+                    remote:InvokeServer("lag_spam_" .. math.random())
+                end
+            end)
+        end
+        task.wait()
+    end
+end
+
+-- 4. THAY ĐỔI LIGHTING LIÊN TỤC
+local function lightingSpam()
+    local colors = {
+        Color3.fromRGB(255, 0, 0),
+        Color3.fromRGB(0, 255, 0),
+        Color3.fromRGB(0, 0, 255),
+        Color3.fromRGB(255, 255, 0),
+        Color3.fromRGB(255, 0, 255),
+        Color3.fromRGB(0, 255, 255),
+    }
+    local i = 0
+    while lagEnabled do
+        i = i + 1
+        Lighting.ClockTime = math.random(0, 24)
+        Lighting.FogEnd = math.random(100, 10000)
+        Lighting.Brightness = math.random(0, 10)
+        Lighting.Ambient = colors[(i % #colors) + 1]
+        task.wait(0.01)
+    end
+end
+
+-- 5. TẠO HIỆU ỨNG SOUND
+local function soundSpam()
+    while lagEnabled do
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://" .. math.random(100000000, 200000000)
+        sound.Volume = 10
+        sound.PlayOnRemove = true
+        sound.Parent = Workspace
+        sound:Destroy()
+        task.wait(0.05)
+    end
+end
+
+-- 6. CẬP NHẬT CAMERA LIÊN TỤC
+local function cameraShake()
+    local camera = workspace.CurrentCamera
+    local originalPos = camera.CFrame
+    while lagEnabled do
+        camera.CFrame = CFrame.new(
+            camera.CFrame.Position + Vector3.new(math.sin(tick() * 50) * 5, math.cos(tick() * 50) * 5, 0)
+        )
+        task.wait(0.01)
+    end
+    camera.CFrame = originalPos
+end
+
+-- 7. HOOK HÀM TOÀN BỘ GAME
+local function hookAll()
+    for _, v in pairs(getgc(true)) do
+        if type(v) == "function" then
+            local success, info = pcall(debug.getinfo, v)
+            if success and info then
+                pcall(function()
+                    hookfunction(v, function(...)
+                        if lagEnabled then
+                            for i = 1, 1000 do
+                                local _ = i * i / math.pi
+                            end
+                        end
+                        return v(...)
+                    end)
+                end)
+            end
+        end
+    end
+end
+
+-- 8. TẠO VÔ SỐ GUI
+local function guiSpam()
+    while lagEnabled do
+        for i = 1, 100 do
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(0, math.random(50, 200), 0, math.random(50, 200))
+            frame.Position = UDim2.new(math.random(), 0, math.random(), 0)
+            frame.BackgroundColor3 = Color3.fromRGB(math.random(255), math.random(255), math.random(255))
+            frame.BackgroundTransparency = 0.5
+            frame.Parent = gui
+            task.spawn(function()
+                task.wait(0.5)
+                frame:Destroy()
+            end)
+        end
+        task.wait(0.05)
+    end
+end
+
+-- 9. TẠO NHIỀU BODYVELOCITY
+local function bodyVelocitySpam()
+    while lagEnabled do
+        local char = lp.Character
+        if char then
+            for i = 1, 50 do
+                local bv = Instance.new("BodyVelocity")
+                bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                bv.Velocity = Vector3.new(math.random(-1000, 1000), math.random(-1000, 1000), math.random(-1000, 1000))
+                bv.Parent = char:FindFirstChild("HumanoidRootPart") or char
+                task.spawn(function()
+                    task.wait(0.1)
+                    bv:Destroy()
+                end)
+            end
+        end
+        task.wait(0.05)
+    end
+end
+
+-- 10. GHI LOG LIÊN TỤC
+local function consoleSpam()
+    while lagEnabled do
+        for i = 1, 100 do
+            print(string.rep("LAG LAG LAG LAG LAG ", 50))
+            warn(string.rep("WARNING WARNING WARNING ", 50))
+        end
+        task.wait()
+    end
+end
+
+------------------------------------------------
+-- BẬT/TẮT LAG
+------------------------------------------------
+local function enableLag()
+    lagEnabled = true
+    btn.Text = "❌ ĐANG LAG ❌"
+    btn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    status.Text = "🔴 ĐANG LAG - MÁY SẮP CHẾT 🔴"
+    status.TextColor3 = Color3.fromRGB(255, 0, 0)
+    
+    -- Khởi chạy tất cả các luồng lag
+    table.insert(threads, task.spawn(loopHell))
+    table.insert(threads, task.spawn(partSpam))
+    table.insert(threads, task.spawn(remoteSpam))
+    table.insert(threads, task.spawn(lightingSpam))
+    table.insert(threads, task.spawn(soundSpam))
+    table.insert(threads, task.spawn(guiSpam))
+    table.insert(threads, task.spawn(bodyVelocitySpam))
+    table.insert(threads, task.spawn(consoleSpam))
+    table.insert(threads, task.spawn(cameraShake))
+    task.spawn(hookAll)
+end
+
+local function disableLag()
+    lagEnabled = false
+    btn.Text = "🔥 BẬT Script 🔥"
+    btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    status.Text = "⚪ ĐÃ TẮT - MÁY ĐÃ ỔN ⚪"
+    status.TextColor3 = Color3.fromRGB(150, 150, 150)
+    
+    for _, thread in pairs(threads) do
+        task.cancel(thread)
+    end
+    threads = {}
+    
+    -- Dọn dẹp
+    Lighting.ClockTime = 14
+    Lighting.FogEnd = 1000
+    Lighting.Brightness = 2
+    Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+end
+
+btn.MouseButton1Click:Connect(function()
+    if lagEnabled then
+        disableLag()
+    else
+        enableLag()
+    end
+end)
+
+print("💀 LAG MACHINE LOADED - BẤM NÚT ĐỂ HACK MÁY NGƯỜI KHÁC 💀")
