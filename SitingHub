@@ -31,9 +31,9 @@ AddToggle(2, {
         
         -- Cấu hình
         _G.FastAttack = state
-        _G.AttackRange = _G.AttackRange or 60
-        _G.HitRate = _G.HitRate or 0.1
-        _G.Combo = _G.Combo or 2
+        _G.AttackRange = _G.AttackRange or 1000
+        _G.HitRate = _G.HitRate or 0.0000001
+        _G.Combo = _G.Combo or 1
         
         -- Hàm khởi tạo module
         local function initModules()
