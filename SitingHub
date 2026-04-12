@@ -18,52 +18,33 @@ BuildMenu()
 
 
 
-AddToggle(2, { 
-    Name = "Fast Attack (Đánh Siêu Nhanh)",
+AddToggle(2, {  -- Tab số 2, có thể đổi thành tab bạn muốn
+    Name = "Auto Attack (Tổng Hợp)",
     Callback = function(state)
-        -- ========== LOGIC FAST ATTACK ==========
-        local RS = game:GetService("ReplicatedStorage")
-        local Players = game:GetService("Players")
-        local plr = Players.LocalPlayer
+        getgenv().TotalAttackEnabled = state
         
-        local fastAttackConnection = nil
-        local Net, Combat, hit, atk = nil, nil, nil, nil
-        
-        -- Cấu hình
-        _G.FastAttack = state
-        _G.AttackRange = _G.AttackRange or 1000
-        _G.HitRate = _G.HitRate or 0.0000001
-        _G.Combo = _G.Combo or 1
-        
-        -- Hàm khởi tạo module
-        local function initModules()
-            if Net and Combat then return end
-            pcall(function()
-                Net = require(RS.Modules.Net)
-                Combat = require(RS.Modules.CombatUtil)
-                hit = Net:RemoteEvent("RegisterHit", true)
-                atk = RS.Modules.Net["RE/RegisterAttack"]
-            end)
-        end
-        
-        -- Hàm dừng
-        local function stopFastAttack()
-            _G.FastAttack = false
-            if fastAttackConnection then
-                fastAttackConnection:Disconnect()
-                fastAttackConnection = nil
-            end
-        end
-        
-        -- Hàm bắt đầu
-        local function startFastAttack()
-            if fastAttackConnection then stopFastAttack() end
+        if state then
+            -- ===== BẬT =====
+            print("🟢 Auto Attack TỔNG HỢP BẬT")
             
-            initModules()
+            -- ========== PHẦN 1: FAST ATTACK TỪ SCRIPT CŨ ==========
+            local RS = game:GetService("ReplicatedStorage")
+            local Players = game:GetService("Players")
+            local plr = Players.LocalPlayer
+            
+            local Net = require(RS.Modules.Net)
+            local Combat = require(RS.Modules.CombatUtil)
+            local hit = Net:RemoteEvent("RegisterHit", true)
+            local atk = RS.Modules.Net["RE/RegisterAttack"]
+            
+            local fastAttackConnection = nil
             local last = 0
+            local range = 10000
+            local hitRate = 0.000000001
+            local combo = 10
             
             fastAttackConnection = game:GetService("RunService").Heartbeat:Connect(function()
-                if not _G.FastAttack then return end
+                if not getgenv().TotalAttackEnabled then return end
                 
                 local char = plr.Character
                 if not char then return end
@@ -74,45 +55,118 @@ AddToggle(2, {
                 if not (root and tool) then return end
                 
                 local now = tick()
-                if now - last < _G.HitRate then return end
+                if now - last < hitRate then return end
                 last = now
                 
-                pcall(function()
-                    local weapon = Combat:GetWeaponName(tool)
-                    local id = tostring(plr.UserId):sub(2,4)
-                    local fired = false
+                local weapon = Combat:GetWeaponName(tool)
+                local id = tostring(plr.UserId):sub(2,4)
+                local fired = false
+                
+                for _, mob in ipairs(workspace.Enemies:GetChildren()) do
+                    local hrp = mob:FindFirstChild("HumanoidRootPart")
+                    local hum = mob:FindFirstChild("Humanoid")
                     
-                    for _, mob in ipairs(workspace.Enemies:GetChildren()) do
-                        local hrp = mob:FindFirstChild("HumanoidRootPart")
-                        local hum = mob:FindFirstChild("Humanoid")
-                        
-                        if hrp and hum and hum.Health > 0 then
-                            if (hrp.Position - root.Position).Magnitude <= _G.AttackRange then
-                                
-                                if not fired then
-                                    atk:FireServer()
-                                    fired = true
-                                end
-                                
-                                for i = 1, _G.Combo do
-                                    hit:FireServer(hrp, {{mob, hrp}}, nil, nil, id)
-                                end
-                                
-                                Combat:ApplyDamageHighlight(mob, char, weapon, hrp)
+                    if hrp and hum and hum.Health > 0 then
+                        if (hrp.Position - root.Position).Magnitude <= range then
+                            if not fired then
+                                atk:FireServer()
+                                fired = true
                             end
+                            for i = 1, combo do
+                                hit:FireServer(hrp, {{mob, hrp}}, nil, nil, id)
+                            end
+                            Combat:ApplyDamageHighlight(mob, char, weapon, hrp)
                         end
                     end
-                end)
+                end
             end)
-        end
-        
-        -- BẬT/TẮT THEO STATE
-        if state then
-            startFastAttack()
-            print("🟢 Fast Attack BẬT")
+            
+            -- ========== PHẦN 2: AUTO ATTACK TỪ SCRIPT NHỎ ==========
+            local p = game.Players.LocalPlayer
+            local rs = game.ReplicatedStorage
+            local Net2 = rs.Modules.Net
+            local RH, RA = Net2["RE/RegisterHit"], Net2["RE/RegisterAttack"]
+            
+            local SendHit
+            pcall(function()
+                SendHit = getsenv(p.PlayerScripts:WaitForChildOfClass("LocalScript"))._G.SendHitsToServer
+            end)
+            
+            local R = 999
+            local Parts = {"Head", "HumanoidRootPart", "LeftHand", "RightHand", "LeftLowerArm", "RightLowerArm"}
+            
+            local function ngu(v)
+                local h = v:FindFirstChild("Humanoid")
+                local r = v:FindFirstChild("HumanoidRootPart")
+                return h and r and h.Health > 0
+            end
+            
+            local function trieu()
+                local t, c = {}, p.Character
+                if not c then return t end
+                local hrp = c.HumanoidRootPart
+                
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if ngu(v) and (v.HumanoidRootPart.Position - hrp.Position).Magnitude <= R then
+                        t[#t + 1] = v
+                    end
+                end
+                for _, v in pairs(workspace.Characters:GetChildren()) do
+                    if v ~= c and ngu(v) and (v.HumanoidRootPart.Position - hrp.Position).Magnitude <= R then
+                        t[#t + 1] = v
+                    end
+                end
+                return t
+            end
+            
+            local function hh(v)
+                return v:FindFirstChild(Parts[math.random(#Parts)]) or v.HumanoidRootPart
+            end
+            
+            local autoAttackConnection = nil
+            autoAttackConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if not getgenv().TotalAttackEnabled then return end
+                
+                local c = p.Character
+                if not c then return end
+                
+                local tg = trieu()
+                if #tg == 0 then return end
+                
+                local a = {nil, {}}
+                for _, v in pairs(tg) do
+                    local pr = hh(v)
+                    a[1] = a[1] or pr
+                    a[2][#a[2] + 1] = {v, pr}
+                end
+                
+                RA:FireServer(0)
+                if SendHit then
+                    SendHit(unpack(a))
+                else
+                    RH:FireServer(unpack(a))
+                end
+            end)
+            
+            -- Lưu connections để tắt sau
+            getgenv()._totalAttackConnections = {
+                fast = fastAttackConnection,
+                auto = autoAttackConnection
+            }
+            
         else
-            stopFastAttack()
-            print("🔴 Fast Attack TẮT")
+            -- ===== TẮT =====
+            print("🔴 Auto Attack TỔNG HỢP TẮT")
+            
+            if getgenv()._totalAttackConnections then
+                if getgenv()._totalAttackConnections.fast then
+                    getgenv()._totalAttackConnections.fast:Disconnect()
+                end
+                if getgenv()._totalAttackConnections.auto then
+                    getgenv()._totalAttackConnections.auto:Disconnect()
+                end
+                getgenv()._totalAttackConnections = nil
+            end
         end
     end
 })
