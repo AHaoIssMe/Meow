@@ -8,7 +8,7 @@ localWindowUi = loadstring(game:HttpGet("https://raw.githubusercontent.com/AHaoI
 CreateTab(1, "Linh Tinh")
 CreateTab(2, "Blox Fruit")
 CreateTab(3, "Evade")
-CreateTab(4, "Client Assasin")
+CreateTab(4, "Cilent Assasin")
 ShowTab(1,2,3,4)
 BuildMenu()
 
