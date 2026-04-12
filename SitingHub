@@ -18,16 +18,15 @@ BuildMenu()
 
 
 
-AddToggle(2, {  -- Tab số 2, có thể đổi thành tab bạn muốn
+AddToggle(2, {
     Name = "Auto Attack (Tổng Hợp)",
     Callback = function(state)
         getgenv().TotalAttackEnabled = state
         
         if state then
-            -- ===== BẬT =====
             print("🟢 Auto Attack TỔNG HỢP BẬT")
             
-            -- ========== PHẦN 1: FAST ATTACK TỪ SCRIPT CŨ ==========
+            -- ========== SCRIPT 1: FAST ATTACK (GIỮ NGUYÊN) ==========
             local RS = game:GetService("ReplicatedStorage")
             local Players = game:GetService("Players")
             local plr = Players.LocalPlayer
@@ -37,13 +36,12 @@ AddToggle(2, {  -- Tab số 2, có thể đổi thành tab bạn muốn
             local hit = Net:RemoteEvent("RegisterHit", true)
             local atk = RS.Modules.Net["RE/RegisterAttack"]
             
-            local fastAttackConnection = nil
             local last = 0
-            local range = 10000
-            local hitRate = 0.000000001
-            local combo = 10
+            local range = 100
+            local hitRate = 0.1
+            local combo = 2
             
-            fastAttackConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            local fastConnection = game:GetService("RunService").Heartbeat:Connect(function()
                 if not getgenv().TotalAttackEnabled then return end
                 
                 local char = plr.Character
@@ -81,7 +79,7 @@ AddToggle(2, {  -- Tab số 2, có thể đổi thành tab bạn muốn
                 end
             end)
             
-            -- ========== PHẦN 2: AUTO ATTACK TỪ SCRIPT NHỎ ==========
+            -- ========== SCRIPT 2: AUTO ATTACK NHỎ (GIỮ NGUYÊN) ==========
             local p = game.Players.LocalPlayer
             local rs = game.ReplicatedStorage
             local Net2 = rs.Modules.Net
@@ -123,8 +121,7 @@ AddToggle(2, {  -- Tab số 2, có thể đổi thành tab bạn muốn
                 return v:FindFirstChild(Parts[math.random(#Parts)]) or v.HumanoidRootPart
             end
             
-            local autoAttackConnection = nil
-            autoAttackConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            local autoConnection = game:GetService("RunService").Heartbeat:Connect(function()
                 if not getgenv().TotalAttackEnabled then return end
                 
                 local c = p.Character
@@ -148,25 +145,25 @@ AddToggle(2, {  -- Tab số 2, có thể đổi thành tab bạn muốn
                 end
             end)
             
-            -- Lưu connections để tắt sau
-            getgenv()._totalAttackConnections = {
-                fast = fastAttackConnection,
-                auto = autoAttackConnection
-            }
+            -- Lưu connections
+            getgenv()._attackConnections = {fast = fastConnection, auto = autoConnection}
             
         else
-            -- ===== TẮT =====
             print("🔴 Auto Attack TỔNG HỢP TẮT")
             
-            if getgenv()._totalAttackConnections then
-                if getgenv()._totalAttackConnections.fast then
-                    getgenv()._totalAttackConnections.fast:Disconnect()
+            -- TẮT CẢ 2 SCRIPT
+            if getgenv()._attackConnections then
+                if getgenv()._attackConnections.fast then
+                    getgenv()._attackConnections.fast:Disconnect()
                 end
-                if getgenv()._totalAttackConnections.auto then
-                    getgenv()._totalAttackConnections.auto:Disconnect()
+                if getgenv()._attackConnections.auto then
+                    getgenv()._attackConnections.auto:Disconnect()
                 end
-                getgenv()._totalAttackConnections = nil
+                getgenv()._attackConnections = nil
             end
+            
+            -- RESET CÁC BIẾN ĐỂ ĐẢM BẢO TẮT HẲN
+            getgenv().TotalAttackEnabled = false
         end
     end
 })
