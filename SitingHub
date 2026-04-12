@@ -19,7 +19,7 @@ BuildMenu()
 
 
 AddToggle(2, {
-    Name = "Auto Attack (Tổng Hợp)",
+    Name = " Super Attack (Beta,Lag)",
     Callback = function(state)
         getgenv().TotalAttackEnabled = state
         
