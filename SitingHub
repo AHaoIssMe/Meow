@@ -18,7 +18,104 @@ BuildMenu()
 
 
 
-
+AddToggle(2, { 
+    Name = "Fast Attack (Đánh Siêu Nhanh)",
+    Callback = function(state)
+        -- ========== LOGIC FAST ATTACK ==========
+        local RS = game:GetService("ReplicatedStorage")
+        local Players = game:GetService("Players")
+        local plr = Players.LocalPlayer
+        
+        local fastAttackConnection = nil
+        local Net, Combat, hit, atk = nil, nil, nil, nil
+        
+        -- Cấu hình
+        _G.FastAttack = state
+        _G.AttackRange = _G.AttackRange or 60
+        _G.HitRate = _G.HitRate or 0.1
+        _G.Combo = _G.Combo or 2
+        
+        -- Hàm khởi tạo module
+        local function initModules()
+            if Net and Combat then return end
+            pcall(function()
+                Net = require(RS.Modules.Net)
+                Combat = require(RS.Modules.CombatUtil)
+                hit = Net:RemoteEvent("RegisterHit", true)
+                atk = RS.Modules.Net["RE/RegisterAttack"]
+            end)
+        end
+        
+        -- Hàm dừng
+        local function stopFastAttack()
+            _G.FastAttack = false
+            if fastAttackConnection then
+                fastAttackConnection:Disconnect()
+                fastAttackConnection = nil
+            end
+        end
+        
+        -- Hàm bắt đầu
+        local function startFastAttack()
+            if fastAttackConnection then stopFastAttack() end
+            
+            initModules()
+            local last = 0
+            
+            fastAttackConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if not _G.FastAttack then return end
+                
+                local char = plr.Character
+                if not char then return end
+                
+                local root = char:FindFirstChild("HumanoidRootPart")
+                local tool = char:FindFirstChildOfClass("Tool")
+                
+                if not (root and tool) then return end
+                
+                local now = tick()
+                if now - last < _G.HitRate then return end
+                last = now
+                
+                pcall(function()
+                    local weapon = Combat:GetWeaponName(tool)
+                    local id = tostring(plr.UserId):sub(2,4)
+                    local fired = false
+                    
+                    for _, mob in ipairs(workspace.Enemies:GetChildren()) do
+                        local hrp = mob:FindFirstChild("HumanoidRootPart")
+                        local hum = mob:FindFirstChild("Humanoid")
+                        
+                        if hrp and hum and hum.Health > 0 then
+                            if (hrp.Position - root.Position).Magnitude <= _G.AttackRange then
+                                
+                                if not fired then
+                                    atk:FireServer()
+                                    fired = true
+                                end
+                                
+                                for i = 1, _G.Combo do
+                                    hit:FireServer(hrp, {{mob, hrp}}, nil, nil, id)
+                                end
+                                
+                                Combat:ApplyDamageHighlight(mob, char, weapon, hrp)
+                            end
+                        end
+                    end
+                end)
+            end)
+        end
+        
+        -- BẬT/TẮT THEO STATE
+        if state then
+            startFastAttack()
+            print("🟢 Fast Attack BẬT")
+        else
+            stopFastAttack()
+            print("🔴 Fast Attack TẮT")
+        end
+    end
+})
 
 AddToggle(1, {
     Name = "Instant Prompts (Bỏ qua nút F)",
