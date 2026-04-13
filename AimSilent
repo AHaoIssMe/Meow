@@ -1,0 +1,175 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RS = game:GetService("ReplicatedStorage")
+
+getgenv().SilentAimEnabled = false
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SilentAimUI"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local Button = Instance.new("TextButton")
+Button.Size = UDim2.new(0, 110, 0, 50)
+Button.Position = UDim2.new(0.5, -55, 0.5, -25)
+Button.Text = "SILENT AIM"
+Button.Font = Enum.Font.GothamBold
+Button.TextSize = 12
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+Button.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+Button.BackgroundTransparency = 0.1
+Button.Active = true
+Button.Draggable = true
+Button.BorderSizePixel = 0
+Button.Parent = ScreenGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = Button
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(255, 255, 255)
+Stroke.Transparency = 0.3
+Stroke.Parent = Button
+
+local LED = Instance.new("Frame")
+LED.Size = UDim2.new(0, 8, 0, 8)
+LED.Position = UDim2.new(0.85, 0, 0.1, 0)
+LED.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+LED.BorderSizePixel = 0
+LED.Parent = Button
+
+local LEDCorner = Instance.new("UICorner")
+LEDCorner.CornerRadius = UDim.new(1, 0)
+LEDCorner.Parent = LED
+
+local DevText = Instance.new("TextLabel", ScreenGui)
+DevText.Size = UDim2.new(0, 110, 0, 15)
+DevText.Position = UDim2.new(0.5, -55, 0.5, -38)
+DevText.Text = "AnhhHaoo"
+DevText.Font = Enum.Font.Gotham
+DevText.TextSize = 10
+DevText.TextColor3 = Color3.fromRGB(200, 200, 200)
+DevText.BackgroundTransparency = 1
+
+local function updateButton()
+    if getgenv().SilentAimEnabled then
+        Button.BackgroundColor3 = Color3.fromRGB(80, 255, 80)
+        LED.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+        Stroke.Color = Color3.fromRGB(80, 255, 80)
+    else
+        Button.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+        LED.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        Stroke.Color = Color3.fromRGB(255, 255, 255)
+    end
+end
+
+Button.MouseButton1Click:Connect(function()
+    getgenv().SilentAimEnabled = not getgenv().SilentAimEnabled
+    updateButton()
+    Button.TextTransparency = 0.5
+    task.wait(0.1)
+    Button.TextTransparency = 0
+end)
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        getgenv().SilentAimEnabled = not getgenv().SilentAimEnabled
+        updateButton()
+    end
+end)
+
+Button.MouseEnter:Connect(function()
+    TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+end)
+
+Button.MouseLeave:Connect(function()
+    TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
+end)
+
+updateButton()
+
+local function getTargetPosition()
+    if not getgenv().SilentAimEnabled then return nil end
+    
+    local char = player.Character
+    if not char then return nil end
+    
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    
+    local closestPlayer = nil
+    local closestDist = math.huge
+    
+    for _, pl in pairs(Players:GetPlayers()) do
+        if pl ~= player and pl.Character then
+            local hrp = pl.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local dist = (hrp.Position - root.Position).Magnitude
+                if dist < closestDist and dist <= 1000 then
+                    closestDist = dist
+                    closestPlayer = hrp
+                end
+            end
+        end
+    end
+    
+    if closestPlayer then
+        return closestPlayer.Position
+    end
+    
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    if enemiesFolder then
+        local closestNPC = nil
+        local closestNPCDist = math.huge
+        
+        for _, npc in pairs(enemiesFolder:GetChildren()) do
+            if npc:IsA("Model") then
+                local hrp = npc:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local dist = (hrp.Position - root.Position).Magnitude
+                    if dist < closestNPCDist and dist <= 1000 then
+                        closestNPCDist = dist
+                        closestNPC = hrp
+                    end
+                end
+            end
+        end
+        
+        if closestNPC then
+            return closestNPC.Position
+        end
+    end
+    
+    return nil
+end
+
+local function setupHook()
+    local ok, hookMeta = pcall(getrawmetatable, game)
+    if ok and hookMeta then
+        setreadonly(hookMeta, false)
+        local oldHook
+        oldHook = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = (getnamecallmethod and getnamecallmethod():lower()) or ""
+            local args = {...}
+            
+            if getgenv().SilentAimEnabled and tostring(self) == "RemoteEvent" and method == "fireserver" then
+                local targetPos = getTargetPosition()
+                if targetPos and type(args[1]) == "Vector3" then
+                    return oldHook(self, targetPos, args[2], args[3])
+                end
+            end
+            
+            return oldHook(self, ...)
+        end)
+        setreadonly(hookMeta, true)
+    end
+end
+
+setupHook()
+
+print("Silent Aim loaded. Press F or click button to toggle.")
